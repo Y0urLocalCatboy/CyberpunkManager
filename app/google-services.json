@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "449797164642",
+    "project_id": "cyberpunkmanager-552f5",
+    "storage_bucket": "cyberpunkmanager-552f5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:449797164642:android:bd13a76dc67d8a2f3ecb3b",
+        "android_client_info": {
+          "package_name": "com.example.cyberpunkmanager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDomCi81ukFmKmQ6iP7PpOY2JWpwUBbuVE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
