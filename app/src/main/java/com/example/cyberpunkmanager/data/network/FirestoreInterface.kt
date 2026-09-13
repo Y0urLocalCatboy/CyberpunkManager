@@ -31,10 +31,18 @@ interface FirestoreInterface {
     // Quickhack
     suspend fun addQuickhack(item: quickhack): Result<Unit>
     suspend fun editQuickhack(item: quickhack): Result<Unit>
-    suspend fun deleteQuickhack(id: quickhack): Result<Unit>
+    suspend fun deleteQuickhack(id: String): Result<Unit>
 
     // Daemon
     suspend fun addDaemon(item: daemon): Result<Unit>
     suspend fun editDaemon(item: daemon): Result<Unit>
-    suspend fun deleteDaemon(id: daemon): Result<Unit>
+    suspend fun deleteDaemon(id: String): Result<Unit>
+
+    // Get All
+    suspend fun getCyberwares(): Result<List<cyberware>>
+    suspend fun getDrugs(): Result<List<drug>>
+    suspend fun getGadgets(): Result<List<gadget>>
+    suspend fun getShards(): Result<List<shard>>
+    suspend fun getQuickhacks(): Result<List<quickhack>>
+    suspend fun getDaemons(): Result<List<daemon>>
 }

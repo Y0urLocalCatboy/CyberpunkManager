@@ -7,4 +7,5 @@ object Constants {
     const val SHARDS = "shards"
     const val DAEMON = "daemons"
     const val QUICKHACK = "quickhacks"
+    const val ADMIN_PASSWORD = "2137"
 }
