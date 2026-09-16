@@ -6,6 +6,7 @@ import com.example.cyberpunkmanager.data.models.drug
 import com.example.cyberpunkmanager.data.models.gadget
 import com.example.cyberpunkmanager.data.models.quickhack
 import com.example.cyberpunkmanager.data.models.shard
+import com.example.cyberpunkmanager.data.models.weapon
 
 interface FirestoreInterface {
     // Cyberware
@@ -38,6 +39,11 @@ interface FirestoreInterface {
     suspend fun editDaemon(item: daemon): Result<Unit>
     suspend fun deleteDaemon(id: String): Result<Unit>
 
+    // Weapon
+    suspend fun addWeapon(item: weapon): Result<Unit>
+    suspend fun editWeapon(item: weapon): Result<Unit>
+    suspend fun deleteWeapon(id: String): Result<Unit>
+
     // Get All
     suspend fun getCyberwares(): Result<List<cyberware>>
     suspend fun getDrugs(): Result<List<drug>>
@@ -45,4 +51,5 @@ interface FirestoreInterface {
     suspend fun getShards(): Result<List<shard>>
     suspend fun getQuickhacks(): Result<List<quickhack>>
     suspend fun getDaemons(): Result<List<daemon>>
+    suspend fun getWeapons(): Result<List<weapon>>
 }

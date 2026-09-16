@@ -7,6 +7,5 @@ class daemon {
     var id: String = ""
     var name: String = ""
     var cost: Int = 200
-    var description: String = ""
     var mechanics: List<String>? = null
 }

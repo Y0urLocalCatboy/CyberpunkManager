@@ -8,6 +8,7 @@ import com.example.cyberpunkmanager.data.models.drug
 import com.example.cyberpunkmanager.data.models.gadget
 import com.example.cyberpunkmanager.data.models.quickhack
 import com.example.cyberpunkmanager.data.models.shard
+import com.example.cyberpunkmanager.data.models.weapon
 import com.example.cyberpunkmanager.data.network.FirestoreClass
 import com.example.cyberpunkmanager.data.network.FirestoreInterface
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,6 +46,7 @@ class AppViewModel(
                 "Shards" -> firestore.getShards()
                 "Quickhacks" -> firestore.getQuickhacks()
                 "Daemons" -> firestore.getDaemons()
+                "Weapons" -> firestore.getWeapons()
                 else -> Result.failure(Exception("Unknown category"))
             }
             
@@ -62,6 +64,7 @@ class AppViewModel(
     fun addShard(item: shard) = viewModelScope.launch { firestore.addShard(item) }
     fun addQuickhack(item: quickhack) = viewModelScope.launch { firestore.addQuickhack(item) }
     fun addDaemon(item: daemon) = viewModelScope.launch { firestore.addDaemon(item) }
+    fun addWeapon(item: weapon) = viewModelScope.launch { firestore.addWeapon(item) }
 
     sealed class UiState {
         object Idle : UiState()

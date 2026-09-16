@@ -7,6 +7,5 @@ class shard {
     var id: String = ""
     var name: String = ""
     var cost: Int = 0
-    var description: String = ""
     var mechanics: List<String>? = null
 }

@@ -7,6 +7,7 @@ import com.example.cyberpunkmanager.data.models.drug
 import com.example.cyberpunkmanager.data.models.gadget
 import com.example.cyberpunkmanager.data.models.quickhack
 import com.example.cyberpunkmanager.data.models.shard
+import com.example.cyberpunkmanager.data.models.weapon
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -94,4 +95,10 @@ class FirestoreClass : FirestoreInterface {
     override suspend fun editDaemon(item: daemon): Result<Unit> = editAsset(Constants.DAEMON, item.id, item)
     override suspend fun deleteDaemon(id: String): Result<Unit> = deleteAsset(Constants.DAEMON, id)
     override suspend fun getDaemons(): Result<List<daemon>> = getAssets(Constants.DAEMON)
+
+    // Weapon
+    override suspend fun addWeapon(item: weapon): Result<Unit> = addAsset(Constants.WEAPON, item)
+    override suspend fun editWeapon(item: weapon): Result<Unit> = editAsset(Constants.WEAPON, item.id, item)
+    override suspend fun deleteWeapon(id: String): Result<Unit> = deleteAsset(Constants.WEAPON, id)
+    override suspend fun getWeapons(): Result<List<weapon>> = getAssets(Constants.WEAPON)
 }
