@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -34,17 +35,13 @@ import com.example.cyberpunkmanager.data.models.*
 import com.example.cyberpunkmanager.data.models.enums.*
 import com.example.cyberpunkmanager.ui.theme.*
 import com.example.cyberpunkmanager.viewmodel.AppViewModel
-val CyberTitleShape = CutCornerShape(16.dp)
-val CyberSubShape = CutCornerShape(8.dp)
-val CyberButtonShape = CutCornerShape(12.dp)
+
 @Composable
 fun NeonGlow(
     color: Color,
     radius: Dp = 20.dp,
     content: @Composable () -> Unit
 ) {
-    val density = LocalDensity.current
-
     Box(
         modifier = Modifier.drawBehind {
             val paint = android.graphics.Paint().apply {
@@ -116,12 +113,13 @@ fun CyberHeader(title: String, subtitle: String? = null, onBack: (() -> Unit)? =
 
 private fun translateSubtitle(subtitle: String): String {
     return when(subtitle.uppercase()) {
-        "ACTIVE_MODULE" -> "AKTYWNY MODUŁ"
-        "ASSET_DETAILS" -> "SZCZEGÓŁY ZASOBU"
-        "ADMIN_CONSTRUCT" -> "KONSTRUKT ADMINA"
+        "ACTIVE MODULE" -> "AKTYWNY MODUŁ"
+        "ASSET DETAILS" -> "SZCZEGÓŁY ZASOBU"
+        "ADMIN CONSTRUCT" -> "KONSTRUKT ADMINA"
         "ADD" -> "DODAJ"
         "VIEW" -> "WIDOK"
-        "LOCAL_STORAGE" -> "PAMIĘĆ LOKALNA"
+        "EDIT" -> "EDYTUJ"
+        "LOCAL STORAGE" -> "PAMIĘĆ LOKALNA"
         else -> subtitle
     }
 }
@@ -152,49 +150,73 @@ fun CyberSearchBar(query: String, onQueryChange: (String) -> Unit) {
 fun AdminScreen(viewModel: AppViewModel, onDetailClick: () -> Unit, onBack: () -> Unit) {
     var mode by remember { mutableStateOf("ADD") }
     var selectedCategory by remember { mutableStateOf("Cyberware") }
+    var editingItem by remember { mutableStateOf<Any?>(null) }
 
     Column(modifier = Modifier.fillMaxSize().background(CyberBg)) {
-        CyberHeader(title = "KONSTRUKT ADMINA", subtitle = mode, onBack = onBack)
+        CyberHeader(title = "KONSTRUKT ADMINA", subtitle = if (editingItem != null) "EDIT" else mode, onBack = onBack)
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Row(modifier = Modifier.border(1.dp, CyberLine, CutCornerShape(4.dp))) {
-                Text(
-                    "DODAJ",
-                    modifier = Modifier
-                        .clickable { mode = "ADD" }
-                        .background(if (mode == "ADD") CyberCyan.copy(alpha = 0.2f) else Color.Transparent)
-                        .padding(horizontal = 24.dp, vertical = 8.dp),
-                    color = if (mode == "ADD") CyberCyan else CyberMuted,
-                    style = MaterialTheme.typography.labelMedium
-                )
-                Box(modifier = Modifier.width(1.dp).height(24.dp).background(CyberLine).align(Alignment.CenterVertically))
-                Text(
-                    "LISTA",
-                    modifier = Modifier
-                        .clickable { mode = "VIEW" }
-                        .background(if (mode == "VIEW") CyberCyan.copy(alpha = 0.2f) else Color.Transparent)
-                        .padding(horizontal = 24.dp, vertical = 8.dp),
-                    color = if (mode == "VIEW") CyberCyan else CyberMuted,
-                    style = MaterialTheme.typography.labelMedium
-                )
+        if (editingItem == null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Row(modifier = Modifier.border(1.dp, CyberLine, CutCornerShape(4.dp))) {
+                    Text(
+                        "DODAJ",
+                        modifier = Modifier
+                            .clickable { mode = "ADD" }
+                            .background(if (mode == "ADD") CyberCyan.copy(alpha = 0.2f) else Color.Transparent)
+                            .padding(horizontal = 24.dp, vertical = 8.dp),
+                        color = if (mode == "ADD") CyberCyan else CyberMuted,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    Box(modifier = Modifier.width(1.dp).height(24.dp).background(CyberLine).align(Alignment.CenterVertically))
+                    Text(
+                        "LISTA",
+                        modifier = Modifier
+                            .clickable { mode = "VIEW" }
+                            .background(if (mode == "VIEW") CyberCyan.copy(alpha = 0.2f) else Color.Transparent)
+                            .padding(horizontal = 24.dp, vertical = 8.dp),
+                        color = if (mode == "VIEW") CyberCyan else CyberMuted,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
             }
         }
 
-        if (mode == "ADD") {
-            AdminAddView(viewModel, selectedCategory) { selectedCategory = it }
+        if (editingItem != null) {
+            AdminFormView(
+                viewModel = viewModel,
+                category = selectedCategory,
+                initialItem = editingItem,
+                onFinished = { editingItem = null }
+            )
+        } else if (mode == "ADD") {
+            AdminFormView(viewModel, selectedCategory, onCategoryChange = { selectedCategory = it })
         } else {
-            AdminListView(viewModel, selectedCategory, { selectedCategory = it }, onDetailClick)
+            AdminListView(
+                viewModel = viewModel,
+                category = selectedCategory,
+                onCategoryChange = { selectedCategory = it },
+                onEditClick = { item ->
+                    editingItem = item
+                },
+                onItemClick = onDetailClick
+            )
         }
     }
 }
 
 @Composable
-fun AdminAddView(viewModel: AppViewModel, category: String, onCategoryChange: (String) -> Unit) {
+fun AdminFormView(
+    viewModel: AppViewModel,
+    category: String,
+    initialItem: Any? = null,
+    onCategoryChange: ((String) -> Unit)? = null,
+    onFinished: (() -> Unit)? = null
+) {
     var name by remember { mutableStateOf("") }
     var cost by remember { mutableStateOf("") }
     var pcCost by remember { mutableStateOf("") }
@@ -208,32 +230,71 @@ fun AdminAddView(viewModel: AppViewModel, category: String, onCategoryChange: (S
 
     val categories = listOf("Cyberware", "Gadgets", "Drugs", "Daemons", "Quickhacks", "Shards", "Weapons")
 
+    // Populate fields if initialItem is provided
+    LaunchedEffect(initialItem) {
+        if (initialItem != null) {
+            name = getProperty(initialItem, "name") as? String ?: ""
+            cost = (getProperty(initialItem, "cost") ?: "").toString()
+            description = getProperty(initialItem, "description") as? String ?: ""
+            mechanicsStr = (getProperty(initialItem, "mechanics") as? List<*>)?.joinToString("; ") ?: ""
+
+            when (initialItem) {
+                is cyberware -> {
+                    pcCost = initialItem.pcCost
+                    uniqueName = initialItem.uniqueName ?: ""
+                    type = _WARE_TYPE.entries.find { it.name == initialItem.type } ?: _WARE_TYPE.DEF
+                }
+                is drug -> {
+                    addictionRisk = DICE.entries.find { it.name == initialItem.addiction_risk } ?: DICE.DEF
+                }
+                is weapon -> {
+                    weaponAttack = initialItem.attack
+                    weaponIsRanged = initialItem.isRanged
+                    uniqueName = initialItem.uniqueName ?: ""
+                }
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 24.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Text("WYBIERZ KATEGORIĘ", color = CyberYellow, style = MaterialTheme.typography.labelSmall)
-        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            categories.take(3).forEach { cat ->
-                Text(
-                    translateCategory(cat).uppercase(),
-                    color = if (category == cat) CyberCyan else CyberMuted,
-                    modifier = Modifier.clickable { onCategoryChange(cat) },
-                    style = MaterialTheme.typography.labelMedium
-                )
-            }
+        if (initialItem != null) {
+            Text(
+                "< POWRÓT DO LISTY",
+                modifier = Modifier.clickable { onFinished?.invoke() }.padding(vertical = 8.dp),
+                color = CyberPink,
+                style = MaterialTheme.typography.labelSmall
+            )
         }
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            categories.drop(3).forEach { cat ->
-                Text(
-                    translateCategory(cat).uppercase(),
-                    color = if (category == cat) CyberCyan else CyberMuted,
-                    modifier = Modifier.clickable { onCategoryChange(cat) },
-                    style = MaterialTheme.typography.labelMedium
-                )
+
+        if (onCategoryChange != null) {
+            Text("WYBIERZ KATEGORIĘ", color = CyberYellow, style = MaterialTheme.typography.labelSmall)
+            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                categories.take(3).forEach { cat ->
+                    Text(
+                        translateCategory(cat).uppercase(),
+                        color = if (category == cat) CyberCyan else CyberMuted,
+                        modifier = Modifier.clickable { onCategoryChange(cat) },
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
             }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                categories.drop(3).forEach { cat ->
+                    Text(
+                        translateCategory(cat).uppercase(),
+                        color = if (category == cat) CyberCyan else CyberMuted,
+                        modifier = Modifier.clickable { onCategoryChange(cat) },
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+            }
+        } else {
+            Text("KATEGORIA: ${translateCategory(category).uppercase()}", color = CyberCyan, style = MaterialTheme.typography.labelMedium)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -275,7 +336,7 @@ fun AdminAddView(viewModel: AppViewModel, category: String, onCategoryChange: (S
             }
         }
 
-        CyberTextField(value = mechanicsStr, onValueChange = { mechanicsStr = it }, label = "MECHANIKA (oddzielona przecinkami)")
+        CyberTextField(value = mechanicsStr, onValueChange = { mechanicsStr = it }, label = "MECHANIKA (oddzielona średnikami)")
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -286,40 +347,73 @@ fun AdminAddView(viewModel: AppViewModel, category: String, onCategoryChange: (S
                 (category != "Weapons" || weaponAttack.isNotBlank())
 
         CyberButton(
-            text = "PRZEŚLIJ DANE",
+            text = if (initialItem != null) "AKTUALIZUJ DANE" else "PRZEŚLIJ DANE",
             enabled = isValid
         ) {
             val cCost = cost.toIntOrNull() ?: 0
-            val mechanicsList = mechanicsStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            val mechanicsList = mechanicsStr.split(";").map { it.trim() }.filter { it.isNotEmpty() }
+            val id = if (initialItem != null) (getProperty(initialItem, "id") as? String ?: "") else ""
 
             when(category) {
-                "Cyberware" -> viewModel.addCyberware(cyberware().apply {
-                    this.name = name; this.cost = cCost; this.pcCost = pcCost; this.description = description
-                    this.uniqueName = if (uniqueName.isNotBlank()) uniqueName else null
-                    this.type = type.name; this.mechanics = mechanicsList
-                })
-                "Drugs" -> viewModel.addDrug(drug().apply {
-                    this.name = name; this.cost = cCost; this.description = description
-                    this.addiction_risk = addictionRisk.name; this.mechanics = mechanicsList
-                })
-                "Gadgets" -> viewModel.addGadget(gadget().apply { this.name = name; this.cost = cCost; this.description = description; this.mechanics = mechanicsList })
-                "Shards" -> viewModel.addShard(shard().apply { this.name = name; this.cost = cCost; this.mechanics = mechanicsList })
-                "Quickhacks" -> viewModel.addQuickhack(quickhack().apply { this.name = name; this.cost = cCost; this.mechanics = mechanicsList })
-                "Daemons" -> viewModel.addDaemon(daemon().apply { this.name = name; this.cost = cCost; this.mechanics = mechanicsList })
-                "Weapons" -> viewModel.addWeapon(weapon().apply {
-                    this.name = name; this.cost = cCost; this.description = description; this.attack = weaponAttack; this.isRanged = weaponIsRanged
-                    this.uniqueName = if (uniqueName.isNotBlank()) uniqueName else null
-                    this.mechanics = mechanicsList
-                })
+                "Cyberware" -> {
+                    val item = cyberware().apply {
+                        this.id = id; this.name = name; this.cost = cCost; this.pcCost = pcCost; this.description = description
+                        this.uniqueName = if (uniqueName.isNotBlank()) uniqueName else null
+                        this.type = type.name; this.mechanics = mechanicsList
+                    }
+                    if (initialItem != null) viewModel.editCyberware(item) else viewModel.addCyberware(item)
+                }
+                "Drugs" -> {
+                    val item = drug().apply {
+                        this.id = id; this.name = name; this.cost = cCost; this.description = description
+                        this.addiction_risk = addictionRisk.name; this.mechanics = mechanicsList
+                    }
+                    if (initialItem != null) viewModel.editDrug(item) else viewModel.addDrug(item)
+                }
+                "Gadgets" -> {
+                    val item = gadget().apply { this.id = id; this.name = name; this.cost = cCost; this.description = description; this.mechanics = mechanicsList }
+                    if (initialItem != null) viewModel.editGadget(item) else viewModel.addGadget(item)
+                }
+                "Shards" -> {
+                    val item = shard().apply { this.id = id; this.name = name; this.cost = cCost; this.mechanics = mechanicsList }
+                    if (initialItem != null) viewModel.editShard(item) else viewModel.addShard(item)
+                }
+                "Quickhacks" -> {
+                    val item = quickhack().apply { this.id = id; this.name = name; this.cost = cCost; this.mechanics = mechanicsList }
+                    if (initialItem != null) viewModel.editQuickhack(item) else viewModel.addQuickhack(item)
+                }
+                "Daemons" -> {
+                    val item = daemon().apply { this.id = id; this.name = name; this.cost = cCost; this.mechanics = mechanicsList }
+                    if (initialItem != null) viewModel.editDaemon(item) else viewModel.addDaemon(item)
+                }
+                "Weapons" -> {
+                    val item = weapon().apply {
+                        this.id = id; this.name = name; this.cost = cCost; this.description = description; this.attack = weaponAttack; this.isRanged = weaponIsRanged
+                        this.uniqueName = if (uniqueName.isNotBlank()) uniqueName else null
+                        this.mechanics = mechanicsList
+                    }
+                    if (initialItem != null) viewModel.editWeapon(item) else viewModel.addWeapon(item)
+                }
             }
-            name = ""; cost = ""; pcCost = ""; description = ""; uniqueName = ""; mechanicsStr = ""; weaponAttack = ""
+            
+            if (initialItem != null) {
+                onFinished?.invoke()
+            } else {
+                name = ""; cost = ""; pcCost = ""; description = ""; uniqueName = ""; mechanicsStr = ""; weaponAttack = ""
+            }
         }
         Spacer(modifier = Modifier.height(40.dp))
     }
 }
 
 @Composable
-fun AdminListView(viewModel: AppViewModel, category: String, onCategoryChange: (String) -> Unit, onItemClick: () -> Unit) {
+fun AdminListView(
+    viewModel: AppViewModel,
+    category: String,
+    onCategoryChange: (String) -> Unit,
+    onEditClick: (Any) -> Unit,
+    onItemClick: () -> Unit
+) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val categories = listOf("Cyberware", "Gadgets", "Drugs", "Daemons", "Quickhacks", "Shards", "Weapons")
@@ -364,10 +458,14 @@ fun AdminListView(viewModel: AppViewModel, category: String, onCategoryChange: (
 
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(filteredItems) { item ->
-                        AssetCard(item) {
-                            viewModel.selectItem(item, category)
-                            onItemClick()
-                        }
+                        AssetCard(
+                            item = item,
+                            onEditClick = { onEditClick(item) },
+                            onClick = {
+                                viewModel.selectItem(item, category)
+                                onItemClick()
+                            }
+                        )
                     }
                 }
             }
@@ -657,6 +755,16 @@ fun FormattedCombatMechanic(text: String) {
         }
     }
 
+private fun getProperty(obj: Any, name: String): Any? {
+    return try {
+        val field = obj.javaClass.getDeclaredField(name)
+        field.isAccessible = true
+        field.get(obj)
+    } catch (e: Exception) {
+        null
+    }
+}
+
 @Composable
 fun CyberTextField(value: String, onValueChange: (String) -> Unit, label: String, visualTransformation: androidx.compose.ui.text.input.VisualTransformation = androidx.compose.ui.text.input.VisualTransformation.None) {
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
@@ -777,12 +885,12 @@ fun WelcomeScreen(onStartClick: () -> Unit) {
                 modifier = Modifier
                     .background(
                         color = CyberCyan.copy(alpha = 0.08f),
-                        shape = CyberTitleShape
+                        shape = CutCornerShape(16.dp)
                     )
                     .border(
                         width = 1.5.dp,
                         color = CyberCyan.copy(alpha = 0.8f),
-                        shape = CyberTitleShape
+                        shape = CutCornerShape(16.dp)
                     )
                     .padding(horizontal = 28.dp, vertical = 16.dp)
             ) {
@@ -804,12 +912,12 @@ fun WelcomeScreen(onStartClick: () -> Unit) {
                 modifier = Modifier
                     .background(
                         color = CyberPink.copy(alpha = 0.08f),
-                        shape = CyberSubShape
+                        shape = CutCornerShape(8.dp)
                     )
                     .border(
                         width = 1.dp,
                         color = CyberPink.copy(alpha = 0.6f),
-                        shape = CyberSubShape
+                        shape = CutCornerShape(8.dp)
                     )
                     .padding(horizontal = 16.dp, vertical = 6.dp)
             ) {
@@ -829,12 +937,12 @@ fun WelcomeScreen(onStartClick: () -> Unit) {
                     .clickable { onStartClick() }
                     .background(
                         color = CyberCyan.copy(alpha = 0.06f),
-                        shape = CyberButtonShape
+                        shape = CutCornerShape(12.dp)
                     )
                     .border(
                         width = 1.5.dp,
                         color = CyberCyan,
-                        shape = CyberButtonShape
+                        shape = CutCornerShape(12.dp)
                     )
                     .padding(horizontal = 32.dp, vertical = 14.dp)
             ) {
@@ -1049,7 +1157,7 @@ fun CategoryItem(name: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun AssetCard(item: Any, onClick: () -> Unit) {
+fun AssetCard(item: Any, onEditClick: (() -> Unit)? = null, onClick: () -> Unit) {
     val name = when(item) {
         is cyberware -> item.name
         is drug -> item.name
@@ -1070,8 +1178,26 @@ fun AssetCard(item: Any, onClick: () -> Unit) {
             shape = CutCornerShape(topStart = 8.dp),
             border = CardDefaults.outlinedCardBorder()
         ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text(text = name.uppercase(), color = CyberYellow, fontWeight = FontWeight.Bold)
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = name.uppercase(),
+                    color = CyberYellow,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                if (onEditClick != null) {
+                    IconButton(onClick = onEditClick) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit",
+                            tint = CyberCyan
+                        )
+                    }
+                }
             }
         }
     }
@@ -1098,4 +1224,3 @@ fun CyberButton(
         }
     }
 }
-

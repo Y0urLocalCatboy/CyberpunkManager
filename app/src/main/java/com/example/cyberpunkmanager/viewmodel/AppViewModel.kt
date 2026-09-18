@@ -145,6 +145,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun addDaemon(item: daemon) = viewModelScope.launch { firestore.addDaemon(item) }
     fun addWeapon(item: weapon) = viewModelScope.launch { firestore.addWeapon(item) }
 
+    fun editCyberware(item: cyberware) = viewModelScope.launch { firestore.editCyberware(item) }
+    fun editDrug(item: drug) = viewModelScope.launch { firestore.editDrug(item) }
+    fun editGadget(item: gadget) = viewModelScope.launch { firestore.editGadget(item) }
+    fun editShard(item: shard) = viewModelScope.launch { firestore.editShard(item) }
+    fun editQuickhack(item: quickhack) = viewModelScope.launch { firestore.editQuickhack(item) }
+    fun editDaemon(item: daemon) = viewModelScope.launch { firestore.editDaemon(item) }
+    fun editWeapon(item: weapon) = viewModelScope.launch { firestore.editWeapon(item) }
+
     sealed class UiState {
         object Idle : UiState()
         object Loading : UiState()
