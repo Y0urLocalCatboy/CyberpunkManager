@@ -20,13 +20,16 @@ import com.example.cyberpunkmanager.ui.AdminScreen
 import com.example.cyberpunkmanager.ui.CategoryScreen
 import com.example.cyberpunkmanager.ui.DashboardScreen
 import com.example.cyberpunkmanager.ui.DetailScreen
+import com.example.cyberpunkmanager.ui.SavedScreen
 import com.example.cyberpunkmanager.ui.WelcomeScreen
 import com.example.cyberpunkmanager.ui.theme.CyberpunkManagerTheme
+import com.google.firebase.FirebaseApp
 import com.example.cyberpunkmanager.viewmodel.AppViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
         enableEdgeToEdge()
         setContent {
             CyberpunkManagerTheme {
@@ -50,10 +53,22 @@ fun MainApp() {
             }
             composable("dashboard") {
                 viewModel.setSearchQuery("") // Reset search on back to dashboard
-                DashboardScreen { category ->
-                    viewModel.loadCategory(category)
-                    navController.navigate("category/$category")
-                }
+                DashboardScreen(
+                    onCategoryClick = { category ->
+                        viewModel.loadCategory(category)
+                        navController.navigate("category/$category")
+                    },
+                    onSavedClick = {
+                        navController.navigate("saved")
+                    }
+                )
+            }
+            composable("saved") {
+                SavedScreen(
+                    viewModel = viewModel,
+                    onItemClick = { navController.navigate("detail") },
+                    onBack = { navController.popBackStack() }
+                )
             }
             composable("category/{category}") { backStackEntry ->
                 val category = backStackEntry.arguments?.getString("category") ?: ""

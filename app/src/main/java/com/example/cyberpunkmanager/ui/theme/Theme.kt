@@ -33,7 +33,7 @@ private val LightColorScheme = DarkColorScheme // Cyberpunk is always dark
 @Composable
 fun CyberpunkManagerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Disabled for specific vibe
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = DarkColorScheme

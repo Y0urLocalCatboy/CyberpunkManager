@@ -26,26 +26,45 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import com.example.cyberpunkmanager.data.Constants
 import com.example.cyberpunkmanager.data.models.*
 import com.example.cyberpunkmanager.data.models.enums.*
 import com.example.cyberpunkmanager.ui.theme.*
 import com.example.cyberpunkmanager.viewmodel.AppViewModel
-
+val CyberTitleShape = CutCornerShape(16.dp)
+val CyberSubShape = CutCornerShape(8.dp)
+val CyberButtonShape = CutCornerShape(12.dp)
 @Composable
 fun NeonGlow(
     color: Color,
-    radius: Float = 20f,
+    radius: Dp = 20.dp,
     content: @Composable () -> Unit
 ) {
+    val density = LocalDensity.current
+
     Box(
         modifier = Modifier.drawBehind {
-            val paint = Paint().asFrameworkPaint().apply {
-                setShadowLayer(radius, 0f, 0f, color.toArgb())
+            val paint = android.graphics.Paint().apply {
+                isAntiAlias = true
+                this.color = android.graphics.Color.TRANSPARENT
+
+                setShadowLayer(
+                    radius.toPx(),
+                    0f,
+                    0f,
+                    color.toArgb()
+                )
             }
+
             drawContext.canvas.nativeCanvas.drawRect(
-                0f, 0f, size.width, size.height, paint
+                0f,
+                0f,
+                size.width,
+                size.height,
+                paint
             )
         }
     ) {
@@ -102,6 +121,7 @@ private fun translateSubtitle(subtitle: String): String {
         "ADMIN_CONSTRUCT" -> "KONSTRUKT ADMINA"
         "ADD" -> "DODAJ"
         "VIEW" -> "WIDOK"
+        "LOCAL_STORAGE" -> "PAMIĘĆ LOKALNA"
         else -> subtitle
     }
 }
@@ -144,7 +164,7 @@ fun AdminScreen(viewModel: AppViewModel, onDetailClick: () -> Unit, onBack: () -
         ) {
             Row(modifier = Modifier.border(1.dp, CyberLine, CutCornerShape(4.dp))) {
                 Text(
-                    "DODAJ", 
+                    "DODAJ",
                     modifier = Modifier
                         .clickable { mode = "ADD" }
                         .background(if (mode == "ADD") CyberCyan.copy(alpha = 0.2f) else Color.Transparent)
@@ -154,7 +174,7 @@ fun AdminScreen(viewModel: AppViewModel, onDetailClick: () -> Unit, onBack: () -
                 )
                 Box(modifier = Modifier.width(1.dp).height(24.dp).background(CyberLine).align(Alignment.CenterVertically))
                 Text(
-                    "LISTA", 
+                    "LISTA",
                     modifier = Modifier
                         .clickable { mode = "VIEW" }
                         .background(if (mode == "VIEW") CyberCyan.copy(alpha = 0.2f) else Color.Transparent)
@@ -185,7 +205,7 @@ fun AdminAddView(viewModel: AppViewModel, category: String, onCategoryChange: (S
     var mechanicsStr by remember { mutableStateOf("") }
     var weaponAttack by remember { mutableStateOf("") }
     var weaponIsRanged by remember { mutableStateOf(true) }
-    
+
     val categories = listOf("Cyberware", "Gadgets", "Drugs", "Daemons", "Quickhacks", "Shards", "Weapons")
 
     Column(
@@ -198,8 +218,8 @@ fun AdminAddView(viewModel: AppViewModel, category: String, onCategoryChange: (S
         Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             categories.take(3).forEach { cat ->
                 Text(
-                    translateCategory(cat).uppercase(), 
-                    color = if (category == cat) CyberCyan else CyberMuted, 
+                    translateCategory(cat).uppercase(),
+                    color = if (category == cat) CyberCyan else CyberMuted,
                     modifier = Modifier.clickable { onCategoryChange(cat) },
                     style = MaterialTheme.typography.labelMedium
                 )
@@ -208,8 +228,8 @@ fun AdminAddView(viewModel: AppViewModel, category: String, onCategoryChange: (S
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             categories.drop(3).forEach { cat ->
                 Text(
-                    translateCategory(cat).uppercase(), 
-                    color = if (category == cat) CyberCyan else CyberMuted, 
+                    translateCategory(cat).uppercase(),
+                    color = if (category == cat) CyberCyan else CyberMuted,
                     modifier = Modifier.clickable { onCategoryChange(cat) },
                     style = MaterialTheme.typography.labelMedium
                 )
@@ -271,14 +291,14 @@ fun AdminAddView(viewModel: AppViewModel, category: String, onCategoryChange: (S
         ) {
             val cCost = cost.toIntOrNull() ?: 0
             val mechanicsList = mechanicsStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-            
+
             when(category) {
-                "Cyberware" -> viewModel.addCyberware(cyberware().apply { 
+                "Cyberware" -> viewModel.addCyberware(cyberware().apply {
                     this.name = name; this.cost = cCost; this.pcCost = pcCost; this.description = description
                     this.uniqueName = if (uniqueName.isNotBlank()) uniqueName else null
                     this.type = type.name; this.mechanics = mechanicsList
                 })
-                "Drugs" -> viewModel.addDrug(drug().apply { 
+                "Drugs" -> viewModel.addDrug(drug().apply {
                     this.name = name; this.cost = cCost; this.description = description
                     this.addiction_risk = addictionRisk.name; this.mechanics = mechanicsList
                 })
@@ -286,7 +306,7 @@ fun AdminAddView(viewModel: AppViewModel, category: String, onCategoryChange: (S
                 "Shards" -> viewModel.addShard(shard().apply { this.name = name; this.cost = cCost; this.mechanics = mechanicsList })
                 "Quickhacks" -> viewModel.addQuickhack(quickhack().apply { this.name = name; this.cost = cCost; this.mechanics = mechanicsList })
                 "Daemons" -> viewModel.addDaemon(daemon().apply { this.name = name; this.cost = cCost; this.mechanics = mechanicsList })
-                "Weapons" -> viewModel.addWeapon(weapon().apply { 
+                "Weapons" -> viewModel.addWeapon(weapon().apply {
                     this.name = name; this.cost = cCost; this.description = description; this.attack = weaponAttack; this.isRanged = weaponIsRanged
                     this.uniqueName = if (uniqueName.isNotBlank()) uniqueName else null
                     this.mechanics = mechanicsList
@@ -312,8 +332,8 @@ fun AdminListView(viewModel: AppViewModel, category: String, onCategoryChange: (
         Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             categories.forEach { cat ->
                 Text(
-                    translateCategory(cat).uppercase(), 
-                    color = if (category == cat) CyberCyan else CyberMuted, 
+                    translateCategory(cat).uppercase(),
+                    color = if (category == cat) CyberCyan else CyberMuted,
                     modifier = Modifier.clickable { onCategoryChange(cat) }.padding(vertical = 12.dp),
                     style = MaterialTheme.typography.labelMedium
                 )
@@ -345,7 +365,7 @@ fun AdminListView(viewModel: AppViewModel, category: String, onCategoryChange: (
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(filteredItems) { item ->
                         AssetCard(item) {
-                            viewModel.selectItem(item)
+                            viewModel.selectItem(item, category)
                             onItemClick()
                         }
                     }
@@ -395,7 +415,7 @@ fun AssetStatsRow(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            
+
             if (mainValue != null) {
                 if (isMainValueComplex) {
                     val text = mainValue.uppercase()
@@ -438,7 +458,9 @@ fun AssetStatsRow(
 @Composable
 fun DetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
     val item by viewModel.selectedItem.collectAsState()
-    
+    val isSaved by viewModel.isCurrentItemSaved.collectAsState()
+    val category by viewModel.selectedCategory.collectAsState()
+
     Column(modifier = Modifier.fillMaxSize().background(CyberBg)) {
         val name = when(item) {
             is cyberware -> (item as cyberware).name
@@ -450,11 +472,18 @@ fun DetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
             is weapon -> (item as weapon).name
             else -> "NIEZNANY"
         }
-        
+
         CyberHeader(title = name.uppercase(), subtitle = "ASSET_DETAILS", onBack = onBack)
-        
+
         Column(modifier = Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())) {
             item?.let { asset ->
+                CyberButton(
+                    text = if (isSaved) "USUŃ Z KOLEKCJI" else "ZAPISZ W KOLEKCJI",
+                    onClick = { viewModel.toggleSave(asset, category) }
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
                 // Common Description Block
                 val description = when(asset) {
                     is weapon -> asset.description
@@ -465,8 +494,8 @@ fun DetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                 }
 
                 if (description.isNotBlank()) {
-                    NeonGlow(color = CyberYellow.copy(alpha = 0.15f), radius = 30f) {
-                        Box(modifier = Modifier.fillMaxWidth().border(1.dp, CyberYellow, CutCornerShape(topStart = 16.dp, bottomEnd = 16.dp)).background(CyberBg).padding(16.dp)) {
+                    NeonGlow(color = CyberYellow.copy(alpha = 0.15f), radius = 30.dp) {
+                        Box(modifier = Modifier.fillMaxWidth().border(1.dp, CyberYellow, CutCornerShape(topStart = 16.dp, bottomEnd = 16.dp)).padding(16.dp)) {
                             Text(description, color = CyberText, style = MaterialTheme.typography.bodyLarge, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
                         }
                     }
@@ -489,7 +518,15 @@ fun DetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                             cost = "${asset.cost} ŻD",
                             mainLabel = "KOSZT PC:",
                             mainValue = asset.pcCost,
-                            sideLabel = asset.type
+                            sideLabel = when (asset.type){
+                                _WARE_TYPE.BORG.name -> _WARE_TYPE.BORG.name + " (+" + _WARE_TYPE.BORG.cost + " WW)"
+                                _WARE_TYPE.CYBER.name -> _WARE_TYPE.CYBER.name + " (+" + _WARE_TYPE.CYBER.cost + " WW)"
+                                _WARE_TYPE.BIO.name -> _WARE_TYPE.BIO.name + " (+" + _WARE_TYPE.BIO.cost + " WW)"
+                                _WARE_TYPE.EGZO.name -> _WARE_TYPE.EGZO.name + " (+" + _WARE_TYPE.EGZO.cost + " WW)"
+                                _WARE_TYPE.JUNK.name -> _WARE_TYPE.JUNK.name + " (+" + _WARE_TYPE.JUNK.cost + " WW)"
+                                _WARE_TYPE.KORPO.name -> _WARE_TYPE.KORPO.name + " (+" + _WARE_TYPE.KORPO.cost + " WW)"
+                                else -> "WW ? Nieznany typ"
+                            }
                         )
                     }
                     is drug -> {
@@ -555,16 +592,10 @@ fun DetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                     is cyberware -> asset.uniqueName
                     else -> null
                 }
-                
+
                 uniqueName?.let { un ->
                     Spacer(modifier = Modifier.height(16.dp))
                     DetailRow("UNIKALNA NAZWA", un)
-                }
-
-                if (asset is shard) {
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text("DANE ARCHIWALNE", color = CyberPink, style = MaterialTheme.typography.labelSmall)
-                    Text("MODUŁ W TRAKCIE SYNCHRONIZACJI...", color = CyberMuted, style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
@@ -580,14 +611,14 @@ fun DetailRow(label: String, value: Any) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            label, 
-            color = CyberPink, 
+            label,
+            color = CyberPink,
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(end = 8.dp)
         )
         Text(
-            value.toString().uppercase(), 
-            color = CyberYellow, 
+            value.toString().uppercase(),
+            color = CyberYellow,
             style = MaterialTheme.typography.labelMedium,
             maxLines = 1,
             softWrap = false
@@ -618,29 +649,13 @@ fun FormattedCombatMechanic(text: String) {
             .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 12.dp)
     ) {
             Text(
-                text.replaceFirstChar { it.uppercase() }, 
-                color = CyberText, 
+                text.replaceFirstChar { it.uppercase() },
+                color = CyberText,
                 style = MaterialTheme.typography.bodyLarge,
                 lineHeight = 22.sp
             )
         }
     }
-
-
-private fun getProperty(obj: Any, name: String): Any? {
-    return try {
-        // Spróbuj znaleźć pole dokładnie, a jeśli nie to ignorując wielkość liter
-        val field = try {
-            obj.javaClass.getDeclaredField(name)
-        } catch (e: Exception) {
-            obj.javaClass.declaredFields.find { it.name.equals(name, ignoreCase = true) }
-        }
-        field?.isAccessible = true
-        field?.get(obj)
-    } catch (e: Exception) {
-        null
-    }
-}
 
 @Composable
 fun CyberTextField(value: String, onValueChange: (String) -> Unit, label: String, visualTransformation: androidx.compose.ui.text.input.VisualTransformation = androidx.compose.ui.text.input.VisualTransformation.None) {
@@ -703,7 +718,7 @@ fun AdminButton(onAuthSuccess: () -> Unit) {
             },
             confirmButton = {
                 Text(
-                    "AUTORYZUJ", 
+                    "AUTORYZUJ",
                     modifier = Modifier.clickable {
                         if (password == Constants.ADMIN_PASSWORD) {
                             showDialog = false
@@ -727,27 +742,131 @@ fun WelcomeScreen(onStartClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(CyberBg)
+            .drawBehind {
+                val lineSpacing = 40.dp.toPx()
+                val color = CyberLine.copy(alpha = 0.2f)
+                for (i in 0..(size.height / lineSpacing).toInt()) {
+                    drawLine(
+                        color = color,
+                        start = androidx.compose.ui.geometry.Offset(0f, i * lineSpacing),
+                        end = androidx.compose.ui.geometry.Offset(size.width, i * lineSpacing),
+                        strokeWidth = 1.dp.toPx()
+                    )
+                }
+            }
             .statusBarsPadding()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
+            .padding(24.dp)
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = "CYBERPUNK\nMANAGER",
-                style = MaterialTheme.typography.displayLarge,
-                color = CyberCyan
-            )
-            Spacer(modifier = Modifier.height(48.dp))
-            CyberButton(text = "INICJALIZUJ", onClick = onStartClick)
+        Text(
+            "wersja_2.1.37_REL",
+            modifier = Modifier.align(Alignment.TopStart),
+            color = CyberMuted,
+            style = MaterialTheme.typography.labelSmall
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .wrapContentSize(Alignment.Center)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(
+                        color = CyberCyan.copy(alpha = 0.08f),
+                        shape = CyberTitleShape
+                    )
+                    .border(
+                        width = 1.5.dp,
+                        color = CyberCyan.copy(alpha = 0.8f),
+                        shape = CyberTitleShape
+                    )
+                    .padding(horizontal = 28.dp, vertical = 16.dp)
+            ) {
+                Text(
+                    text = "CYBERPUNK\nMANAGER",
+                    color = CyberCyan,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.headlineLarge.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        lineHeight = 42.sp,
+                        letterSpacing = 2.sp
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Box(
+                modifier = Modifier
+                    .background(
+                        color = CyberPink.copy(alpha = 0.08f),
+                        shape = CyberSubShape
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = CyberPink.copy(alpha = 0.6f),
+                        shape = CyberSubShape
+                    )
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = "Podręczna Baza Danych",
+                    color = CyberPink,
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        letterSpacing = 1.5.sp
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(80.dp))
+
+            Box(
+                modifier = Modifier
+                    .clickable { onStartClick() }
+                    .background(
+                        color = CyberCyan.copy(alpha = 0.06f),
+                        shape = CyberButtonShape
+                    )
+                    .border(
+                        width = 1.5.dp,
+                        color = CyberCyan,
+                        shape = CyberButtonShape
+                    )
+                    .padding(horizontal = 32.dp, vertical = 14.dp)
+            ) {
+                Text(
+                    text = ">   INICJALIZUJ SYSTEM",
+                    color = CyberCyan,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.5.sp
+                    )
+                )
+            }
         }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(Color.Transparent, CyberCyan, Color.Transparent)
+                    )
+                )
+        )
     }
 }
 
 @Composable
-fun DashboardScreen(onCategoryClick: (String) -> Unit) {
+fun DashboardScreen(onCategoryClick: (String) -> Unit, onSavedClick: () -> Unit) {
     val categories = listOf("Cyberware", "Gadgets", "Drugs", "Daemons", "Quickhacks", "Shards", "Weapons")
-    
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -764,8 +883,90 @@ fun DashboardScreen(onCategoryClick: (String) -> Unit) {
                 modifier = Modifier.padding(bottom = 16.dp)
             )
         }
+        item {
+            SavedCategoryItem(onClick = onSavedClick)
+        }
         items(categories) { category ->
             CategoryItem(translateCategory(category)) { onCategoryClick(category) }
+        }
+    }
+}
+
+@Composable
+fun SavedCategoryItem(onClick: () -> Unit) {
+    NeonGlow(color = CyberPink.copy(alpha = 0.3f), radius = 30.dp) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, CyberPink, CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp))
+                .background(CyberBg.copy(alpha = 0.5f), CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp))
+                .clickable { onClick() }
+                .padding(20.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(text = "ZAPISANE", style = MaterialTheme.typography.headlineSmall, color = CyberPink)
+            }
+        }
+    }
+}
+
+@Composable
+fun SavedScreen(viewModel: AppViewModel, onItemClick: () -> Unit, onBack: () -> Unit) {
+    val savedItems by viewModel.savedItems.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(CyberBg)
+    ) {
+        CyberHeader(title = "ZAPISANE", subtitle = "LOCAL_STORAGE", onBack = onBack)
+
+        CyberSearchBar(query = searchQuery, onQueryChange = { viewModel.setSearchQuery(it) })
+
+        Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+            val filteredItems = savedItems.filter { item ->
+                val name = when(item) {
+                    is cyberware -> item.name
+                    is drug -> item.name
+                    is gadget -> item.name
+                    is shard -> item.name
+                    is quickhack -> item.name
+                    is daemon -> item.name
+                    is weapon -> item.name
+                    else -> ""
+                }
+                name.contains(searchQuery, ignoreCase = true)
+            }
+
+            if (filteredItems.isEmpty()) {
+                Text(
+                    "BRAK ZAPISANYCH ELEMENTÓW",
+                    color = CyberMuted,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.align(Alignment.Center).padding(top = 40.dp)
+                )
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(filteredItems) { item ->
+                        AssetCard(item) {
+                            val category = when(item) {
+                                is cyberware -> "Cyberware"
+                                is drug -> "Drugs"
+                                is gadget -> "Gadgets"
+                                is shard -> "Shards"
+                                is quickhack -> "Quickhacks"
+                                is daemon -> "Daemons"
+                                is weapon -> "Weapons"
+                                else -> ""
+                            }
+                            viewModel.selectItem(item, category)
+                            onItemClick()
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -794,7 +995,7 @@ fun CategoryScreen(category: String, viewModel: AppViewModel, onItemClick: () ->
             .background(MaterialTheme.colorScheme.background)
     ) {
         CyberHeader(title = translateCategory(category).uppercase(), subtitle = "ACTIVE_MODULE", onBack = onBack)
-        
+
         CyberSearchBar(query = searchQuery, onQueryChange = { viewModel.setSearchQuery(it) })
 
         Box(modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -819,7 +1020,7 @@ fun CategoryScreen(category: String, viewModel: AppViewModel, onItemClick: () ->
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(filteredItems) { item ->
                             AssetCard(item) {
-                                viewModel.selectItem(item)
+                                viewModel.selectItem(item, category)
                                 onItemClick()
                             }
                         }
@@ -833,7 +1034,7 @@ fun CategoryScreen(category: String, viewModel: AppViewModel, onItemClick: () ->
 
 @Composable
 fun CategoryItem(name: String, onClick: () -> Unit) {
-    NeonGlow(color = CyberCyan.copy(alpha = 0.3f), radius = 30f) {
+    NeonGlow(color = CyberCyan.copy(alpha = 0.3f), radius = 30.dp) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -859,8 +1060,8 @@ fun AssetCard(item: Any, onClick: () -> Unit) {
         is weapon -> item.name
         else -> "Unknown"
     }
-    
-    NeonGlow(color = CyberYellow.copy(alpha = 0.2f), radius = 20f) {
+
+    NeonGlow(color = CyberYellow.copy(alpha = 0.2f), radius = 20.dp) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -878,11 +1079,11 @@ fun AssetCard(item: Any, onClick: () -> Unit) {
 
 @Composable
 fun CyberButton(
-    text: String, 
+    text: String,
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    NeonGlow(color = if (enabled) CyberCyan.copy(alpha = 0.4f) else Color.Transparent, radius = 40f) {
+    NeonGlow(color = if (enabled) CyberCyan.copy(alpha = 0.4f) else Color.Transparent, radius = 40.dp) {
         Button(
             onClick = onClick,
             enabled = enabled,
@@ -897,3 +1098,4 @@ fun CyberButton(
         }
     }
 }
+

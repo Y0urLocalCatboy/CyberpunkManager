@@ -1,23 +1,24 @@
 package com.example.cyberpunkmanager.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.cyberpunkmanager.data.models.cyberware
-import com.example.cyberpunkmanager.data.models.daemon
-import com.example.cyberpunkmanager.data.models.drug
-import com.example.cyberpunkmanager.data.models.gadget
-import com.example.cyberpunkmanager.data.models.quickhack
-import com.example.cyberpunkmanager.data.models.shard
-import com.example.cyberpunkmanager.data.models.weapon
+import com.example.cyberpunkmanager.data.local.AppDatabase
+import com.example.cyberpunkmanager.data.local.SavedItem
+import com.example.cyberpunkmanager.data.models.*
 import com.example.cyberpunkmanager.data.network.FirestoreClass
 import com.example.cyberpunkmanager.data.network.FirestoreInterface
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import com.google.gson.Gson
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-class AppViewModel(
+class AppViewModel(application: Application) : AndroidViewModel(application) {
+
     private val firestore: FirestoreInterface = FirestoreClass()
-) : ViewModel() {
+
+    private val db = AppDatabase.getDatabase(application)
+    private val savedItemDao = db.savedItemDao()
+    private val gson = Gson()
 
     private val _uiState = MutableStateFlow<UiState>(UiState.Idle)
     val uiState: StateFlow<UiState> = _uiState
@@ -28,12 +29,90 @@ class AppViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
-    fun selectItem(item: Any?) {
-        _selectedItem.value = item
-    }
-
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    private val _selectedCategory = MutableStateFlow("")
+    val selectedCategory: StateFlow<String> = _selectedCategory
+
+    private val _isCurrentItemSaved = MutableStateFlow(false)
+    val isCurrentItemSaved: StateFlow<Boolean> = _isCurrentItemSaved
+
+    val savedItems: StateFlow<List<Any>> = savedItemDao.getAllSavedItems()
+        .map { list -> list.mapNotNull { convertToModel(it) } }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    fun selectItem(item: Any?, category: String = "") {
+        _selectedItem.value = item
+        _selectedCategory.value = category
+        checkIfSaved(item)
+    }
+
+    private fun checkIfSaved(item: Any?) {
+        val id = getObjectId(item)
+        if (id != null) {
+            viewModelScope.launch {
+                _isCurrentItemSaved.value = savedItemDao.isItemSaved(id)
+            }
+        } else {
+            _isCurrentItemSaved.value = false
+        }
+    }
+
+    fun toggleSave(item: Any, category: String) {
+        val id = getObjectId(item) ?: return
+        viewModelScope.launch {
+            if (savedItemDao.isItemSaved(id)) {
+                savedItemDao.deleteSavedItemById(id)
+                _isCurrentItemSaved.value = false
+            } else {
+                val name = getObjectName(item) ?: "Unknown"
+                val json = gson.toJson(item)
+                savedItemDao.insertSavedItem(SavedItem(id, name, category, json))
+                _isCurrentItemSaved.value = true
+            }
+        }
+    }
+
+    private fun getObjectId(item: Any?): String? = when(item) {
+        is cyberware -> item.id
+        is drug -> item.id
+        is gadget -> item.id
+        is shard -> item.id
+        is quickhack -> item.id
+        is daemon -> item.id
+        is weapon -> item.id
+        else -> null
+    }
+
+    private fun getObjectName(item: Any?): String? = when(item) {
+        is cyberware -> item.name
+        is drug -> item.name
+        is gadget -> item.name
+        is shard -> item.name
+        is quickhack -> item.name
+        is daemon -> item.name
+        is weapon -> item.name
+        else -> null
+    }
+
+    private fun convertToModel(savedItem: SavedItem): Any? {
+        return try {
+            val clazz = when (savedItem.category) {
+                "Cyberware" -> cyberware::class.java
+                "Drugs" -> drug::class.java
+                "Gadgets" -> gadget::class.java
+                "Shards" -> shard::class.java
+                "Quickhacks" -> quickhack::class.java
+                "Daemons" -> daemon::class.java
+                "Weapons" -> weapon::class.java
+                else -> null
+            }
+            if (clazz != null) gson.fromJson(savedItem.jsonData, clazz) else null
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun loadCategory(category: String) {

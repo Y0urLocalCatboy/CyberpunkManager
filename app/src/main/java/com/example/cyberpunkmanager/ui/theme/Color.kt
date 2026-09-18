@@ -2,7 +2,7 @@ package com.example.cyberpunkmanager.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val CyberBg = Color(0xFF07090D)
+val CyberBg = Color(0xFF0F161E)
 val CyberPanel = Color(0xDF0D1118) // rgba(13, 17, 24, .88)
 val CyberPanel2 = Color(0xE6131821) // rgba(19, 24, 33, .9)
 val CyberLine = Color(0xFF1F2D3B)
