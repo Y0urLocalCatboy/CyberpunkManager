@@ -44,11 +44,21 @@ class FirestoreClass : FirestoreInterface {
         Result.failure(e)
     }
 
-    private suspend inline fun <reified T> getAssets(collection: String): Result<List<T>> = try {
+    private suspend inline fun <reified T : Any> getAssets(collection: String): Result<List<T>> = try {
         val snapshot = mFirestore.collection(collection).get().await()
         val items = snapshot.documents.mapNotNull { doc ->
             try {
-                doc.toObject(T::class.java)
+                val item = doc.toObject(T::class.java)
+                item?.apply {
+                    // Przypisanie id z dokumentu Firestore do pola 'id' w obiekcie
+                    try {
+                        val field = javaClass.getDeclaredField("id")
+                        field.isAccessible = true
+                        field.set(this, doc.id)
+                    } catch (_: Exception) {
+                        // Ignorujemy, jeśli dany model nie ma pola 'id'
+                    }
+                }
             } catch (e: Exception) {
                 android.util.Log.e("FirestoreClass", "Error parsing document ${doc.id} to ${T::class.java.simpleName}", e)
                 null
