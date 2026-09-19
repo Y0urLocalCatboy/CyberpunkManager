@@ -52,7 +52,7 @@ fun MainApp() {
                 WelcomeScreen { navController.navigate("dashboard") }
             }
             composable("dashboard") {
-                viewModel.setSearchQuery("") // Reset search on back to dashboard
+                viewModel.setSearchQuery("")
                 DashboardScreen(
                     onCategoryClick = { category ->
                         viewModel.loadCategory(category)
