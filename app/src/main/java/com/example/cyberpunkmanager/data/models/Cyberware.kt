@@ -4,7 +4,7 @@ import com.example.cyberpunkmanager.data.models.enums._WARE_TYPE
 import com.google.firebase.firestore.IgnoreExtraProperties
 
 @IgnoreExtraProperties
-class cyberware {
+class Cyberware {
     var id: String = ""
     var name: String = ""
     var uniqueName: String? = null

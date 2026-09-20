@@ -3,7 +3,7 @@ package com.example.cyberpunkmanager.data.models
 import com.google.firebase.firestore.IgnoreExtraProperties
 
 @IgnoreExtraProperties
-class weapon {
+class Weapon {
     var id: String = ""
     var name: String = ""
     var isRanged: Boolean = true

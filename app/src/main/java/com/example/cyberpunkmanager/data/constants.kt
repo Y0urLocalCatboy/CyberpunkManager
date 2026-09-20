@@ -8,5 +8,6 @@ object Constants {
     const val DAEMON = "daemons"
     const val QUICKHACK = "quickhacks"
     const val WEAPON = "weapons"
+    const val AGENT = "agents"
     const val ADMIN_PASSWORD = "274416"
 }

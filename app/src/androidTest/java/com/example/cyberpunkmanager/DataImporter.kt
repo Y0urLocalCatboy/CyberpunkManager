@@ -22,25 +22,25 @@ class DataImporter {
     private val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test
-    fun importWeapons() = runBlocking { importCollection<weapon>("weapons.json", Constants.WEAPON) }
+    fun importWeapons() = runBlocking { importCollection<Weapon>("weapons.json", Constants.WEAPON) }
 
     @Test
-    fun importCyberware() = runBlocking { importCollection<cyberware>("cyberware.json", Constants.CYBERWARES) }
+    fun importCyberware() = runBlocking { importCollection<Cyberware>("cyberware.json", Constants.CYBERWARES) }
 
     @Test
-    fun importDrugs() = runBlocking { importCollection<drug>("drugs.json", Constants.DRUGS) }
+    fun importDrugs() = runBlocking { importCollection<Drug>("drugs.json", Constants.DRUGS) }
 
     @Test
-    fun importGadgets() = runBlocking { importCollection<gadget>("gadgets.json", Constants.GADGETS) }
+    fun importGadgets() = runBlocking { importCollection<Gadget>("gadgets.json", Constants.GADGETS) }
 
     @Test
-    fun importShards() = runBlocking { importCollection<shard>("shards.json", Constants.SHARDS) }
+    fun importShards() = runBlocking { importCollection<Shard>("shards.json", Constants.SHARDS) }
 
     @Test
-    fun importQuickhacks() = runBlocking { importCollection<quickhack>("quickhacks.json", Constants.QUICKHACK) }
+    fun importQuickhacks() = runBlocking { importCollection<Quickhack>("quickhacks.json", Constants.QUICKHACK) }
 
     @Test
-    fun importDaemons() = runBlocking { importCollection<daemon>("daemons.json", Constants.DAEMON) }
+    fun importDaemons() = runBlocking { importCollection<Daemon>("daemons.json", Constants.DAEMON) }
 
     private suspend inline fun <reified T> importCollection(fileName: String, collectionName: String) {
         try {

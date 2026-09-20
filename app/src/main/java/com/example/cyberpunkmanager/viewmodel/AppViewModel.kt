@@ -76,37 +76,40 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun getObjectId(item: Any?): String? = when(item) {
-        is cyberware -> item.id
-        is drug -> item.id
-        is gadget -> item.id
-        is shard -> item.id
-        is quickhack -> item.id
-        is daemon -> item.id
-        is weapon -> item.id
+        is Cyberware -> item.id
+        is Drug -> item.id
+        is Gadget -> item.id
+        is Shard -> item.id
+        is Quickhack -> item.id
+        is Daemon -> item.id
+        is Weapon -> item.id
+        is Agent -> item.id
         else -> null
     }
 
     private fun getObjectName(item: Any?): String? = when(item) {
-        is cyberware -> item.name
-        is drug -> item.name
-        is gadget -> item.name
-        is shard -> item.name
-        is quickhack -> item.name
-        is daemon -> item.name
-        is weapon -> item.name
+        is Cyberware -> item.uniqueName ?: item.name
+        is Drug -> item.name
+        is Gadget -> item.name
+        is Shard -> item.name
+        is Quickhack -> item.name
+        is Daemon -> item.name
+        is Weapon -> item.uniqueName ?: item.name
+        is Agent -> item.uniqueName ?: item.name
         else -> null
     }
 
     private fun convertToModel(savedItem: SavedItem): Any? {
         return try {
             val clazz = when (savedItem.category) {
-                "Cyberware" -> cyberware::class.java
-                "Drugs" -> drug::class.java
-                "Gadgets" -> gadget::class.java
-                "Shards" -> shard::class.java
-                "Quickhacks" -> quickhack::class.java
-                "Daemons" -> daemon::class.java
-                "Weapons" -> weapon::class.java
+                "Cyberware" -> Cyberware::class.java
+                "Drugs" -> Drug::class.java
+                "Gadgets" -> Gadget::class.java
+                "Shards" -> Shard::class.java
+                "Quickhacks" -> Quickhack::class.java
+                "Daemons" -> Daemon::class.java
+                "Weapons" -> Weapon::class.java
+                "Agents" -> Agent::class.java
                 else -> null
             }
             if (clazz != null) gson.fromJson(savedItem.jsonData, clazz) else null
@@ -126,6 +129,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 "Quickhacks" -> firestore.getQuickhacks()
                 "Daemons" -> firestore.getDaemons()
                 "Weapons" -> firestore.getWeapons()
+                "Agents" -> firestore.getAgents()
                 else -> Result.failure(Exception("Unknown category"))
             }
             
@@ -137,21 +141,23 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun addCyberware(item: cyberware) = viewModelScope.launch { firestore.addCyberware(item) }
-    fun addDrug(item: drug) = viewModelScope.launch { firestore.addDrug(item) }
-    fun addGadget(item: gadget) = viewModelScope.launch { firestore.addGadget(item) }
-    fun addShard(item: shard) = viewModelScope.launch { firestore.addShard(item) }
-    fun addQuickhack(item: quickhack) = viewModelScope.launch { firestore.addQuickhack(item) }
-    fun addDaemon(item: daemon) = viewModelScope.launch { firestore.addDaemon(item) }
-    fun addWeapon(item: weapon) = viewModelScope.launch { firestore.addWeapon(item) }
+    fun addCyberware(item: Cyberware) = viewModelScope.launch { firestore.addCyberware(item) }
+    fun addDrug(item: Drug) = viewModelScope.launch { firestore.addDrug(item) }
+    fun addGadget(item: Gadget) = viewModelScope.launch { firestore.addGadget(item) }
+    fun addShard(item: Shard) = viewModelScope.launch { firestore.addShard(item) }
+    fun addQuickhack(item: Quickhack) = viewModelScope.launch { firestore.addQuickhack(item) }
+    fun addDaemon(item: Daemon) = viewModelScope.launch { firestore.addDaemon(item) }
+    fun addWeapon(item: Weapon) = viewModelScope.launch { firestore.addWeapon(item) }
+    fun addAgent(item: Agent) = viewModelScope.launch { firestore.addAgent(item) }
 
-    fun editCyberware(item: cyberware) = viewModelScope.launch { firestore.editCyberware(item) }
-    fun editDrug(item: drug) = viewModelScope.launch { firestore.editDrug(item) }
-    fun editGadget(item: gadget) = viewModelScope.launch { firestore.editGadget(item) }
-    fun editShard(item: shard) = viewModelScope.launch { firestore.editShard(item) }
-    fun editQuickhack(item: quickhack) = viewModelScope.launch { firestore.editQuickhack(item) }
-    fun editDaemon(item: daemon) = viewModelScope.launch { firestore.editDaemon(item) }
-    fun editWeapon(item: weapon) = viewModelScope.launch { firestore.editWeapon(item) }
+    fun editCyberware(item: Cyberware) = viewModelScope.launch { firestore.editCyberware(item) }
+    fun editDrug(item: Drug) = viewModelScope.launch { firestore.editDrug(item) }
+    fun editGadget(item: Gadget) = viewModelScope.launch { firestore.editGadget(item) }
+    fun editShard(item: Shard) = viewModelScope.launch { firestore.editShard(item) }
+    fun editQuickhack(item: Quickhack) = viewModelScope.launch { firestore.editQuickhack(item) }
+    fun editDaemon(item: Daemon) = viewModelScope.launch { firestore.editDaemon(item) }
+    fun editWeapon(item: Weapon) = viewModelScope.launch { firestore.editWeapon(item) }
+    fun editAgent(item: Agent) = viewModelScope.launch { firestore.editAgent(item) }
 
     sealed class UiState {
         object Idle : UiState()

@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
@@ -25,9 +24,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import com.example.cyberpunkmanager.data.Constants
@@ -113,9 +110,9 @@ fun CyberHeader(title: String, subtitle: String? = null, onBack: (() -> Unit)? =
 
 private fun translateSubtitle(subtitle: String): String {
     return when(subtitle.uppercase()) {
-        "ACTIVE MODULE" -> "AKTYWNY MODUŁ"
-        "ASSET DETAILS" -> "SZCZEGÓŁY ZASOBU"
-        "ADMIN CONSTRUCT" -> "KONSTRUKT ADMINA"
+        "ACTIVE_MODULE" -> "AKTYWNY MODUŁ"
+        "ASSET_DETAILS" -> "SZCZEGÓŁY ZASOBU"
+        "ADMIN_CONSTRUCT" -> "KONSTRUKT ADMINA"
         "ADD" -> "DODAJ"
         "VIEW" -> "WIDOK"
         "EDIT" -> "EDYTUJ"
@@ -227,10 +224,20 @@ fun AdminFormView(
     var mechanicsStr by remember { mutableStateOf("") }
     var weaponAttack by remember { mutableStateOf("") }
     var weaponIsRanged by remember { mutableStateOf(true) }
+    
+    var agentHp by remember { mutableStateOf("") }
+    var agentInt by remember { mutableStateOf("") }
+    var agentCha by remember { mutableStateOf("") }
+    var agentStr by remember { mutableStateOf("") }
+    var agentSpd by remember { mutableStateOf("") }
+    var agentAcc by remember { mutableStateOf("") }
+    var agentMonthlyCost by remember { mutableStateOf("") }
+    var agentType by remember { mutableStateOf(AGENT_TYPE.DEF) }
+    var agentActionsStr by remember { mutableStateOf("") }
+    var agentPassiveActionsStr by remember { mutableStateOf("") }
 
-    val categories = listOf("Cyberware", "Gadgets", "Drugs", "Daemons", "Quickhacks", "Shards", "Weapons")
+    val categories = listOf("Cyberware", "Gadgets", "Drugs", "Daemons", "Quickhacks", "Shards", "Weapons", "Agents")
 
-    // Populate fields if initialItem is provided
     LaunchedEffect(initialItem) {
         if (initialItem != null) {
             name = getProperty(initialItem, "name") as? String ?: ""
@@ -239,18 +246,31 @@ fun AdminFormView(
             mechanicsStr = (getProperty(initialItem, "mechanics") as? List<*>)?.joinToString("; ") ?: ""
 
             when (initialItem) {
-                is cyberware -> {
+                is Cyberware -> {
                     pcCost = initialItem.pcCost
                     uniqueName = initialItem.uniqueName ?: ""
                     type = _WARE_TYPE.entries.find { it.name == initialItem.type } ?: _WARE_TYPE.DEF
                 }
-                is drug -> {
+                is Drug -> {
                     addictionRisk = DICE.entries.find { it.name == initialItem.addiction_risk } ?: DICE.DEF
                 }
-                is weapon -> {
+                is Weapon -> {
                     weaponAttack = initialItem.attack
                     weaponIsRanged = initialItem.isRanged
                     uniqueName = initialItem.uniqueName ?: ""
+                }
+                is Agent -> {
+                    agentHp = initialItem.hitPoints.toString()
+                    agentInt = initialItem.intBonus.toString()
+                    agentCha = initialItem.chaBonus.toString()
+                    agentStr = initialItem.strBonus.toString()
+                    agentSpd = initialItem.spdBonus.toString()
+                    agentAcc = initialItem.accBonus.toString()
+                    agentMonthlyCost = initialItem.monthlyCost.toString()
+                    agentType = AGENT_TYPE.entries.find { it.name == initialItem.type } ?: AGENT_TYPE.DEF
+                    uniqueName = initialItem.uniqueName ?: ""
+                    agentActionsStr = initialItem.actions?.joinToString("; ") ?: ""
+                    agentPassiveActionsStr = initialItem.passiveActions?.joinToString("; ") ?: ""
                 }
             }
         }
@@ -336,15 +356,48 @@ fun AdminFormView(
             }
         }
 
-        CyberTextField(value = mechanicsStr, onValueChange = { mechanicsStr = it }, label = "MECHANIKA (oddzielona średnikami)")
+        if (category == "Agents") {
+            CyberTextField(value = agentHp, onValueChange = { agentHp = it }, label = "PŻ (HITPOINTS)")
+            CyberTextField(value = agentMonthlyCost, onValueChange = { agentMonthlyCost = it }, label = "KOSZT MIESIĘCZNY")
+            CyberTextField(value = uniqueName, onValueChange = { uniqueName = it }, label = "UNIKALNA NAZWA (opcjonalnie)")
+
+            Text("TYP AGENTA", color = CyberYellow, style = MaterialTheme.typography.labelSmall)
+            AGENT_TYPE.entries.filter { it != AGENT_TYPE.DEF }.forEach { t ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(selected = agentType == t, onClick = { agentType = t })
+                    Text(t.typeName, color = CyberText, style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+            
+            Text("BONUSY DO RZUTÓW", color = CyberYellow, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(modifier = Modifier.weight(1f)) { CyberTextField(value = agentInt, onValueChange = { agentInt = it }, label = "INT") }
+                Box(modifier = Modifier.weight(1f)) { CyberTextField(value = agentCha, onValueChange = { agentCha = it }, label = "CHA") }
+                Box(modifier = Modifier.weight(1f)) { CyberTextField(value = agentStr, onValueChange = { agentStr = it }, label = "STR") }
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(modifier = Modifier.weight(1f)) { CyberTextField(value = agentSpd, onValueChange = { agentSpd = it }, label = "SPD") }
+                Box(modifier = Modifier.weight(1f)) { CyberTextField(value = agentAcc, onValueChange = { agentAcc = it }, label = "ACC") }
+            }
+            
+            CyberTextField(value = agentActionsStr, onValueChange = { agentActionsStr = it }, label = "AKCJE (oddzielone średnikami)")
+            CyberTextField(value = agentPassiveActionsStr, onValueChange = { agentPassiveActionsStr = it }, label = "AKCJE PASYWNE (oddzielone średnikami)")
+        }
+
+        if (category != "Agents") {
+            CyberTextField(value = mechanicsStr, onValueChange = { mechanicsStr = it }, label = "MECHANIKA (oddzielona średnikami)")
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         val isDescriptionRequired = category != "Daemons" && category != "Quickhacks" && category != "Shards"
-        val isValid = name.isNotBlank() && cost.toIntOrNull() != null && (description.isNotBlank() || !isDescriptionRequired) && mechanicsStr.isNotBlank() &&
+        val isMechanicsRequired = category != "Agents"
+        val isValid = name.isNotBlank() && cost.toIntOrNull() != null && (description.isNotBlank() || !isDescriptionRequired) && 
+                (mechanicsStr.isNotBlank() || !isMechanicsRequired) &&
                 (category != "Cyberware" || (type != _WARE_TYPE.DEF && pcCost.isNotBlank())) &&
                 (category != "Drugs" || (addictionRisk != DICE.DEF)) &&
-                (category != "Weapons" || weaponAttack.isNotBlank())
+                (category != "Weapons" || weaponAttack.isNotBlank()) &&
+                (category != "Agents" || (agentHp.isNotBlank() && agentMonthlyCost.isNotBlank() && agentType != AGENT_TYPE.DEF))
 
         CyberButton(
             text = if (initialItem != null) "AKTUALIZUJ DANE" else "PRZEŚLIJ DANE",
@@ -356,7 +409,7 @@ fun AdminFormView(
 
             when(category) {
                 "Cyberware" -> {
-                    val item = cyberware().apply {
+                    val item = Cyberware().apply {
                         this.id = id; this.name = name; this.cost = cCost; this.pcCost = pcCost; this.description = description
                         this.uniqueName = if (uniqueName.isNotBlank()) uniqueName else null
                         this.type = type.name; this.mechanics = mechanicsList
@@ -364,35 +417,52 @@ fun AdminFormView(
                     if (initialItem != null) viewModel.editCyberware(item) else viewModel.addCyberware(item)
                 }
                 "Drugs" -> {
-                    val item = drug().apply {
+                    val item = Drug().apply {
                         this.id = id; this.name = name; this.cost = cCost; this.description = description
                         this.addiction_risk = addictionRisk.name; this.mechanics = mechanicsList
                     }
                     if (initialItem != null) viewModel.editDrug(item) else viewModel.addDrug(item)
                 }
                 "Gadgets" -> {
-                    val item = gadget().apply { this.id = id; this.name = name; this.cost = cCost; this.description = description; this.mechanics = mechanicsList }
+                    val item = Gadget().apply { this.id = id; this.name = name; this.cost = cCost; this.description = description; this.mechanics = mechanicsList }
                     if (initialItem != null) viewModel.editGadget(item) else viewModel.addGadget(item)
                 }
                 "Shards" -> {
-                    val item = shard().apply { this.id = id; this.name = name; this.cost = cCost; this.mechanics = mechanicsList }
+                    val item = Shard().apply { this.id = id; this.name = name; this.cost = cCost; this.mechanics = mechanicsList }
                     if (initialItem != null) viewModel.editShard(item) else viewModel.addShard(item)
                 }
                 "Quickhacks" -> {
-                    val item = quickhack().apply { this.id = id; this.name = name; this.cost = cCost; this.mechanics = mechanicsList }
+                    val item = Quickhack().apply { this.id = id; this.name = name; this.cost = cCost; this.mechanics = mechanicsList }
                     if (initialItem != null) viewModel.editQuickhack(item) else viewModel.addQuickhack(item)
                 }
                 "Daemons" -> {
-                    val item = daemon().apply { this.id = id; this.name = name; this.cost = cCost; this.mechanics = mechanicsList }
+                    val item = Daemon().apply { this.id = id; this.name = name; this.cost = cCost; this.mechanics = mechanicsList }
                     if (initialItem != null) viewModel.editDaemon(item) else viewModel.addDaemon(item)
                 }
                 "Weapons" -> {
-                    val item = weapon().apply {
+                    val item = Weapon().apply {
                         this.id = id; this.name = name; this.cost = cCost; this.description = description; this.attack = weaponAttack; this.isRanged = weaponIsRanged
                         this.uniqueName = if (uniqueName.isNotBlank()) uniqueName else null
                         this.mechanics = mechanicsList
                     }
                     if (initialItem != null) viewModel.editWeapon(item) else viewModel.addWeapon(item)
+                }
+                "Agents" -> {
+                    val item = Agent().apply {
+                        this.id = id; this.name = name; this.initialCost = cCost; this.description = description
+                        this.hitPoints = agentHp.toIntOrNull() ?: 0
+                        this.monthlyCost = agentMonthlyCost.toIntOrNull() ?: 0
+                        this.type = agentType.name
+                        this.intBonus = agentInt.toIntOrNull() ?: 0
+                        this.chaBonus = agentCha.toIntOrNull() ?: 0
+                        this.strBonus = agentStr.toIntOrNull() ?: 0
+                        this.spdBonus = agentSpd.toIntOrNull() ?: 0
+                        this.accBonus = agentAcc.toIntOrNull() ?: 0
+                        this.uniqueName = if (uniqueName.isNotBlank()) uniqueName else null
+                        this.actions = agentActionsStr.split(";").map { it.trim() }.filter { it.isNotEmpty() }
+                        this.passiveActions = agentPassiveActionsStr.split(";").map { it.trim() }.filter { it.isNotEmpty() }
+                    }
+                    if (initialItem != null) viewModel.editAgent(item) else viewModel.addAgent(item)
                 }
             }
             
@@ -400,6 +470,8 @@ fun AdminFormView(
                 onFinished?.invoke()
             } else {
                 name = ""; cost = ""; pcCost = ""; description = ""; uniqueName = ""; mechanicsStr = ""; weaponAttack = ""
+                agentHp = ""; agentInt = ""; agentCha = ""; agentStr = ""; agentSpd = ""; agentAcc = ""
+                agentMonthlyCost = ""; agentType = AGENT_TYPE.DEF; agentActionsStr = ""; agentPassiveActionsStr = ""
             }
         }
         Spacer(modifier = Modifier.height(40.dp))
@@ -416,7 +488,7 @@ fun AdminListView(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
-    val categories = listOf("Cyberware", "Gadgets", "Drugs", "Daemons", "Quickhacks", "Shards", "Weapons")
+    val categories = listOf("Cyberware", "Gadgets", "Drugs", "Daemons", "Quickhacks", "Shards", "Weapons", "Agents")
 
     LaunchedEffect(category) {
         viewModel.loadCategory(category)
@@ -444,13 +516,14 @@ fun AdminListView(
             is AppViewModel.UiState.Success -> {
                 val filteredItems = state.items.filter { item ->
                     val name = when(item) {
-                        is cyberware -> item.name
-                        is drug -> item.name
-                        is gadget -> item.name
-                        is shard -> item.name
-                        is quickhack -> item.name
-                        is daemon -> item.name
-                        is weapon -> item.name
+                        is Cyberware -> item.uniqueName ?: item.name
+                        is Drug -> item.name
+                        is Gadget -> item.name
+                        is Shard -> item.name
+                        is Quickhack -> item.name
+                        is Daemon -> item.name
+                        is Weapon -> item.uniqueName ?: item.name
+                        is Agent -> item.uniqueName ?: item.name
                         else -> ""
                     }
                     name.contains(searchQuery, ignoreCase = true)
@@ -561,13 +634,14 @@ fun DetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
 
     Column(modifier = Modifier.fillMaxSize().background(CyberBg)) {
         val name = when(item) {
-            is cyberware -> (item as cyberware).name
-            is drug -> (item as drug).name
-            is gadget -> (item as gadget).name
-            is shard -> (item as shard).name
-            is quickhack -> (item as quickhack).name
-            is daemon -> (item as daemon).name
-            is weapon -> (item as weapon).name
+            is Cyberware -> (item as Cyberware).name
+            is Drug -> (item as Drug).name
+            is Gadget -> (item as Gadget).name
+            is Shard -> (item as Shard).name
+            is Quickhack -> (item as Quickhack).name
+            is Daemon -> (item as Daemon).name
+            is Weapon -> (item as Weapon).name
+            is Agent -> (item as Agent).name
             else -> "NIEZNANY"
         }
 
@@ -584,10 +658,11 @@ fun DetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
 
                 // Common Description Block
                 val description = when(asset) {
-                    is weapon -> asset.description
-                    is cyberware -> asset.description
-                    is drug -> asset.description
-                    is gadget -> asset.description
+                    is Weapon -> asset.description
+                    is Cyberware -> asset.description
+                    is Drug -> asset.description
+                    is Gadget -> asset.description
+                    is Agent -> asset.description
                     else -> ""
                 }
 
@@ -602,7 +677,7 @@ fun DetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
 
                 // Unified Stats Row
                 when(asset) {
-                    is weapon -> {
+                    is Weapon -> {
                         AssetStatsRow(
                             cost = "${asset.cost} ŻD",
                             mainLabel = "RZUT NA:",
@@ -611,7 +686,7 @@ fun DetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                             isMainValueComplex = true
                         )
                     }
-                    is cyberware -> {
+                    is Cyberware -> {
                         AssetStatsRow(
                             cost = "${asset.cost} ŻD",
                             mainLabel = "KOSZT PC:",
@@ -627,7 +702,7 @@ fun DetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                             }
                         )
                     }
-                    is drug -> {
+                    is Drug -> {
                         AssetStatsRow(
                             cost = "${asset.cost} ŻD",
                             mainLabel = "UZALEŻNIENIE:",
@@ -635,47 +710,77 @@ fun DetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                             sideLabel = "SUBSTANCJA"
                         )
                     }
-                    is gadget -> {
+                    is Gadget -> {
                         AssetStatsRow(
                             cost = "${asset.cost} ŻD",
                             sideLabel = "GADŻET"
                         )
                     }
-                    is quickhack -> {
+                    is Quickhack -> {
                         AssetStatsRow(
                             cost = "${asset.cost} ŻD",
                             sideLabel = "QUICKHACK"
                         )
                     }
-                    is daemon -> {
+                    is Daemon -> {
                         AssetStatsRow(
                             cost = "${asset.cost} ŻD",
                             sideLabel = "DAEMON"
                         )
                     }
-                    is shard -> {
+                    is Shard -> {
                         AssetStatsRow(
                             cost = "${asset.cost} ŻD",
                             sideLabel = "DRZAZGA"
                         )
                     }
+                    is Agent -> {
+                        Column {
+                            AssetStatsRow(
+                                cost = "${asset.initialCost} ŻD",
+                                mainLabel = "PŻ:",
+                                mainValue = asset.hitPoints.toString(),
+                                sideLabel = "AGENT " + (AGENT_TYPE.entries.find { it.name == asset.type }?.typeName ?: "")
+                            )
+                            Text(
+                                text = "KOSZT MIESIĘCZNY: ${asset.monthlyCost} ŻD",
+                                color = CyberCyan,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("BONUSY DO RZUTÓW", color = CyberPink, style = MaterialTheme.typography.labelSmall)
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                listOf("INT" to asset.intBonus, "CHA" to asset.chaBonus, "STR" to asset.strBonus, "SPD" to asset.spdBonus, "ACC" to asset.accBonus).forEach { (label, value) ->
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(label, color = CyberYellow, style = MaterialTheme.typography.labelSmall)
+                                        Text(if (value >= 0) "+$value" else "$value", color = CyberText, style = MaterialTheme.typography.titleMedium)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // Mechanics at bottom
                 val mechanics = when(asset) {
-                    is weapon -> asset.mechanics
-                    is cyberware -> asset.mechanics
-                    is drug -> asset.mechanics
-                    is gadget -> asset.mechanics
-                    is shard -> asset.mechanics
-                    is quickhack -> asset.mechanics
-                    is daemon -> asset.mechanics
+                    is Weapon -> asset.mechanics
+                    is Cyberware -> asset.mechanics
+                    is Drug -> asset.mechanics
+                    is Gadget -> asset.mechanics
+                    is Shard -> asset.mechanics
+                    is Quickhack -> asset.mechanics
+                    is Daemon -> asset.mechanics
+                    is Agent -> asset.actions
                     else -> null
                 }
 
                 if (!mechanics.isNullOrEmpty()) {
                     Spacer(modifier = Modifier.height(24.dp))
-                    Text("SPECYFIKACJA TECHNICZNA", color = CyberPink, style = MaterialTheme.typography.labelSmall)
+                    Text(if (asset is Agent) "AKCJE" else "SPECYFIKACJA TECHNICZNA", color = CyberPink, style = MaterialTheme.typography.labelSmall)
                     Spacer(modifier = Modifier.height(8.dp))
                     Column(modifier = Modifier.fillMaxWidth()) {
                         mechanics.forEach { m ->
@@ -684,10 +789,22 @@ fun DetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                     }
                 }
 
+                if (asset is Agent && !asset.passiveActions.isNullOrEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("AKCJE PASYWNE", color = CyberPink, style = MaterialTheme.typography.labelSmall)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        asset.passiveActions?.forEach { m ->
+                            FormattedCombatMechanic(m)
+                        }
+                    }
+                }
+
                 // Extra Unique ID info if present
                 val uniqueName = when(asset) {
-                    is weapon -> asset.uniqueName
-                    is cyberware -> asset.uniqueName
+                    is Weapon -> asset.uniqueName
+                    is Cyberware -> asset.uniqueName
+                    is Agent -> asset.uniqueName
                     else -> null
                 }
 
@@ -973,7 +1090,7 @@ fun WelcomeScreen(onStartClick: () -> Unit) {
 
 @Composable
 fun DashboardScreen(onCategoryClick: (String) -> Unit, onSavedClick: () -> Unit) {
-    val categories = listOf("Cyberware", "Gadgets", "Drugs", "Daemons", "Quickhacks", "Shards", "Weapons")
+    val categories = listOf("Cyberware", "Gadgets", "Drugs", "Daemons", "Quickhacks", "Shards", "Weapons", "Agents")
 
     LazyColumn(
         modifier = Modifier
@@ -1036,13 +1153,14 @@ fun SavedScreen(viewModel: AppViewModel, onItemClick: () -> Unit, onBack: () -> 
         Box(modifier = Modifier.padding(horizontal = 16.dp)) {
             val filteredItems = savedItems.filter { item ->
                 val name = when(item) {
-                    is cyberware -> item.name
-                    is drug -> item.name
-                    is gadget -> item.name
-                    is shard -> item.name
-                    is quickhack -> item.name
-                    is daemon -> item.name
-                    is weapon -> item.name
+                    is Cyberware -> item.uniqueName ?: item.name
+                    is Drug -> item.name
+                    is Gadget -> item.name
+                    is Shard -> item.name
+                    is Quickhack -> item.name
+                    is Daemon -> item.name
+                    is Weapon -> item.uniqueName ?: item.name
+                    is Agent -> item.uniqueName ?: item.name
                     else -> ""
                 }
                 name.contains(searchQuery, ignoreCase = true)
@@ -1060,13 +1178,14 @@ fun SavedScreen(viewModel: AppViewModel, onItemClick: () -> Unit, onBack: () -> 
                     items(filteredItems) { item ->
                         AssetCard(item) {
                             val category = when(item) {
-                                is cyberware -> "Cyberware"
-                                is drug -> "Drugs"
-                                is gadget -> "Gadgets"
-                                is shard -> "Shards"
-                                is quickhack -> "Quickhacks"
-                                is daemon -> "Daemons"
-                                is weapon -> "Weapons"
+                                is Cyberware -> "Cyberware"
+                                is Drug -> "Drugs"
+                                is Gadget -> "Gadgets"
+                                is Shard -> "Shards"
+                                is Quickhack -> "Quickhacks"
+                                is Daemon -> "Daemons"
+                                is Weapon -> "Weapons"
+                                is Agent -> "Agents"
                                 else -> ""
                             }
                             viewModel.selectItem(item, category)
@@ -1088,6 +1207,7 @@ fun translateCategory(category: String): String {
         "Quickhacks" -> "Quickhacki"
         "Shards" -> "Drzazgi"
         "Weapons" -> "Broń"
+        "Agents" -> "Agenci"
         else -> category
     }
 }
@@ -1102,7 +1222,7 @@ fun CategoryScreen(category: String, viewModel: AppViewModel, onItemClick: () ->
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        CyberHeader(title = translateCategory(category).uppercase(), subtitle = "ACTIVE_MODULE", onBack = onBack)
+        CyberHeader(title = translateCategory(category).uppercase(), subtitle = "AKTYWNY MODUŁ", onBack = onBack)
 
         CyberSearchBar(query = searchQuery, onQueryChange = { viewModel.setSearchQuery(it) })
 
@@ -1113,13 +1233,14 @@ fun CategoryScreen(category: String, viewModel: AppViewModel, onItemClick: () ->
                 is AppViewModel.UiState.Success -> {
                     val filteredItems = state.items.filter { item ->
                         val name = when(item) {
-                            is cyberware -> item.name
-                            is drug -> item.name
-                            is gadget -> item.name
-                            is shard -> item.name
-                            is quickhack -> item.name
-                            is daemon -> item.name
-                            is weapon -> item.name
+                            is Cyberware -> item.uniqueName ?: item.name
+                            is Drug -> item.name
+                            is Gadget -> item.name
+                            is Shard -> item.name
+                            is Quickhack -> item.name
+                            is Daemon -> item.name
+                            is Weapon -> item.uniqueName ?: item.name
+                            is Agent -> item.uniqueName ?: item.name
                             else -> ""
                         }
                         name.contains(searchQuery, ignoreCase = true)
@@ -1159,13 +1280,14 @@ fun CategoryItem(name: String, onClick: () -> Unit) {
 @Composable
 fun AssetCard(item: Any, onEditClick: (() -> Unit)? = null, onClick: () -> Unit) {
     val name = when(item) {
-        is cyberware -> item.name
-        is drug -> item.name
-        is gadget -> item.name
-        is shard -> item.name
-        is quickhack -> item.name
-        is daemon -> item.name
-        is weapon -> item.name
+        is Cyberware -> item.uniqueName ?: item.name
+        is Drug -> item.name
+        is Gadget -> item.name
+        is Shard -> item.name
+        is Quickhack -> item.name
+        is Daemon -> item.name
+        is Weapon -> item.uniqueName ?: item.name
+        is Agent -> item.uniqueName ?: item.name
         else -> "Unknown"
     }
 
