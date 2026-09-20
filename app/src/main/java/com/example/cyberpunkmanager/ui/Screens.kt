@@ -226,6 +226,7 @@ fun AdminFormView(
     var weaponIsRanged by remember { mutableStateOf(true) }
     
     var agentHp by remember { mutableStateOf("") }
+    var agentWw by remember { mutableStateOf("") }
     var agentInt by remember { mutableStateOf("") }
     var agentCha by remember { mutableStateOf("") }
     var agentStr by remember { mutableStateOf("") }
@@ -235,32 +236,41 @@ fun AdminFormView(
     var agentType by remember { mutableStateOf(AGENT_TYPE.DEF) }
     var agentActionsStr by remember { mutableStateOf("") }
     var agentPassiveActionsStr by remember { mutableStateOf("") }
+    var agentImplantsStr by remember { mutableStateOf("") }
 
     val categories = listOf("Cyberware", "Gadgets", "Drugs", "Daemons", "Quickhacks", "Shards", "Weapons", "Agents")
 
     LaunchedEffect(initialItem) {
         if (initialItem != null) {
             name = getProperty(initialItem, "name") as? String ?: ""
-            cost = (getProperty(initialItem, "cost") ?: "").toString()
             description = getProperty(initialItem, "description") as? String ?: ""
             mechanicsStr = (getProperty(initialItem, "mechanics") as? List<*>)?.joinToString("; ") ?: ""
 
             when (initialItem) {
                 is Cyberware -> {
+                    cost = initialItem.cost.toString()
                     pcCost = initialItem.pcCost
                     uniqueName = initialItem.uniqueName ?: ""
                     type = _WARE_TYPE.entries.find { it.name == initialItem.type } ?: _WARE_TYPE.DEF
                 }
                 is Drug -> {
+                    cost = initialItem.cost.toString()
                     addictionRisk = DICE.entries.find { it.name == initialItem.addiction_risk } ?: DICE.DEF
                 }
                 is Weapon -> {
+                    cost = initialItem.cost.toString()
                     weaponAttack = initialItem.attack
                     weaponIsRanged = initialItem.isRanged
                     uniqueName = initialItem.uniqueName ?: ""
                 }
+                is Gadget -> { cost = initialItem.cost.toString() }
+                is Shard -> { cost = initialItem.cost.toString() }
+                is Quickhack -> { cost = initialItem.cost.toString() }
+                is Daemon -> { cost = initialItem.cost.toString() }
                 is Agent -> {
+                    cost = initialItem.initialCost.toString()
                     agentHp = initialItem.hitPoints.toString()
+                    agentWw = initialItem.ww.toString()
                     agentInt = initialItem.intBonus.toString()
                     agentCha = initialItem.chaBonus.toString()
                     agentStr = initialItem.strBonus.toString()
@@ -271,6 +281,7 @@ fun AdminFormView(
                     uniqueName = initialItem.uniqueName ?: ""
                     agentActionsStr = initialItem.actions?.joinToString("; ") ?: ""
                     agentPassiveActionsStr = initialItem.passiveActions?.joinToString("; ") ?: ""
+                    agentImplantsStr = initialItem.implants?.joinToString("; ") ?: ""
                 }
             }
         }
@@ -358,6 +369,7 @@ fun AdminFormView(
 
         if (category == "Agents") {
             CyberTextField(value = agentHp, onValueChange = { agentHp = it }, label = "PŻ (HITPOINTS)")
+            CyberTextField(value = agentWw, onValueChange = { agentWw = it }, label = "WW (WYTRZYMAŁOŚĆ WEWNĘTRZNA)")
             CyberTextField(value = agentMonthlyCost, onValueChange = { agentMonthlyCost = it }, label = "KOSZT MIESIĘCZNY")
             CyberTextField(value = uniqueName, onValueChange = { uniqueName = it }, label = "UNIKALNA NAZWA (opcjonalnie)")
 
@@ -382,6 +394,7 @@ fun AdminFormView(
             
             CyberTextField(value = agentActionsStr, onValueChange = { agentActionsStr = it }, label = "AKCJE (oddzielone średnikami)")
             CyberTextField(value = agentPassiveActionsStr, onValueChange = { agentPassiveActionsStr = it }, label = "AKCJE PASYWNE (oddzielone średnikami)")
+            CyberTextField(value = agentImplantsStr, onValueChange = { agentImplantsStr = it }, label = "WSZCZEPY (oddzielone średnikami)")
         }
 
         if (category != "Agents") {
@@ -451,6 +464,7 @@ fun AdminFormView(
                     val item = Agent().apply {
                         this.id = id; this.name = name; this.initialCost = cCost; this.description = description
                         this.hitPoints = agentHp.toIntOrNull() ?: 0
+                        this.ww = agentWw.toIntOrNull() ?: 0
                         this.monthlyCost = agentMonthlyCost.toIntOrNull() ?: 0
                         this.type = agentType.name
                         this.intBonus = agentInt.toIntOrNull() ?: 0
@@ -461,6 +475,7 @@ fun AdminFormView(
                         this.uniqueName = if (uniqueName.isNotBlank()) uniqueName else null
                         this.actions = agentActionsStr.split(";").map { it.trim() }.filter { it.isNotEmpty() }
                         this.passiveActions = agentPassiveActionsStr.split(";").map { it.trim() }.filter { it.isNotEmpty() }
+                        this.implants = agentImplantsStr.split(";").map { it.trim() }.filter { it.isNotEmpty() }
                     }
                     if (initialItem != null) viewModel.editAgent(item) else viewModel.addAgent(item)
                 }
@@ -470,8 +485,8 @@ fun AdminFormView(
                 onFinished?.invoke()
             } else {
                 name = ""; cost = ""; pcCost = ""; description = ""; uniqueName = ""; mechanicsStr = ""; weaponAttack = ""
-                agentHp = ""; agentInt = ""; agentCha = ""; agentStr = ""; agentSpd = ""; agentAcc = ""
-                agentMonthlyCost = ""; agentType = AGENT_TYPE.DEF; agentActionsStr = ""; agentPassiveActionsStr = ""
+                agentHp = ""; agentWw = ""; agentInt = ""; agentCha = ""; agentStr = ""; agentSpd = ""; agentAcc = ""
+                agentMonthlyCost = ""; agentType = AGENT_TYPE.DEF; agentActionsStr = ""; agentPassiveActionsStr = ""; agentImplantsStr = ""
             }
         }
         Spacer(modifier = Modifier.height(40.dp))
@@ -631,6 +646,13 @@ fun DetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
     val item by viewModel.selectedItem.collectAsState()
     val isSaved by viewModel.isCurrentItemSaved.collectAsState()
     val category by viewModel.selectedCategory.collectAsState()
+    
+    val currentItem = item
+    val allCyberwares by produceState<List<Cyberware>>(initialValue = emptyList(), currentItem) {
+        if (currentItem is Agent && currentItem.type == AGENT_TYPE.ORGANIC.name && !currentItem.implants.isNullOrEmpty()) {
+            value = viewModel.getAllCyberwares()
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(CyberBg)) {
         val name = when(item) {
@@ -736,12 +758,23 @@ fun DetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                     }
                     is Agent -> {
                         Column {
+                            val isMechanical = asset.type == AGENT_TYPE.MECHANICAL.name
+                            val isOrganic = asset.type == AGENT_TYPE.ORGANIC.name
+
                             AssetStatsRow(
                                 cost = "${asset.initialCost} ŻD",
-                                mainLabel = "PŻ:",
+                                mainLabel = if (isMechanical) "WW:" else "PŻ:",
                                 mainValue = asset.hitPoints.toString(),
                                 sideLabel = "AGENT " + (AGENT_TYPE.entries.find { it.name == asset.type }?.typeName ?: "")
                             )
+                            if (isOrganic) {
+                                Text(
+                                    text = "WW: ${asset.ww}",
+                                    color = CyberCyan,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
                             Text(
                                 text = "KOSZT MIESIĘCZNY: ${asset.monthlyCost} ŻD",
                                 color = CyberCyan,
@@ -796,6 +829,35 @@ fun DetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         asset.passiveActions?.forEach { m ->
                             FormattedCombatMechanic(m)
+                        }
+                    }
+                }
+
+                if (asset is Agent && asset.type == AGENT_TYPE.ORGANIC.name && !asset.implants.isNullOrEmpty()) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text("WSZCZEPY", color = CyberPink, style = MaterialTheme.typography.labelSmall)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        asset.implants?.forEach { implantName ->
+                            val found = allCyberwares.find { it.name.equals(implantName, ignoreCase = true) || it.uniqueName?.equals(implantName, ignoreCase = true) == true }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(enabled = found != null) {
+                                        if (found != null) {
+                                            viewModel.selectItem(found, "Cyberware")
+                                        }
+                                    }
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "• ${implantName.uppercase()}",
+                                    color = if (found != null) CyberCyan else CyberMuted,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    textDecoration = if (found != null) androidx.compose.ui.text.style.TextDecoration.Underline else null
+                                )
+                            }
                         }
                     }
                 }

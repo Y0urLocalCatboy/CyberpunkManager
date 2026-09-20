@@ -159,6 +159,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun editWeapon(item: Weapon) = viewModelScope.launch { firestore.editWeapon(item) }
     fun editAgent(item: Agent) = viewModelScope.launch { firestore.editAgent(item) }
 
+    suspend fun getAllCyberwares(): List<Cyberware> = firestore.getCyberwares().getOrDefault(emptyList())
+
     sealed class UiState {
         object Idle : UiState()
         object Loading : UiState()

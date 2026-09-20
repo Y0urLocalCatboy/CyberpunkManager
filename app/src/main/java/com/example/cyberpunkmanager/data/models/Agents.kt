@@ -7,6 +7,7 @@ class Agent {
     var id: String = ""
     var name: String = ""
     var hitPoints: Int = 0
+    var ww: Int = 0
     var intBonus: Int = 0
     var chaBonus: Int = 0
     var strBonus: Int = 0
@@ -19,4 +20,5 @@ class Agent {
     var description: String = ""
     var actions: List<String>? = null
     var passiveActions: List<String>? = null
+    var implants: List<String>? = null
 }
