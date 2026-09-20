@@ -159,6 +159,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun editWeapon(item: Weapon) = viewModelScope.launch { firestore.editWeapon(item) }
     fun editAgent(item: Agent) = viewModelScope.launch { firestore.editAgent(item) }
 
+    fun deleteCyberware(id: String) = viewModelScope.launch { firestore.deleteCyberware(id) }
+    fun deleteDrug(id: String) = viewModelScope.launch { firestore.deleteDrug(id) }
+    fun deleteGadget(id: String) = viewModelScope.launch { firestore.deleteGadget(id) }
+    fun deleteShard(id: String) = viewModelScope.launch { firestore.deleteShard(id) }
+    fun deleteQuickhack(id: String) = viewModelScope.launch { firestore.deleteQuickhack(id) }
+    fun deleteDaemon(id: String) = viewModelScope.launch { firestore.deleteDaemon(id) }
+    fun deleteWeapon(id: String) = viewModelScope.launch { firestore.deleteWeapon(id) }
+    fun deleteAgent(id: String) = viewModelScope.launch { firestore.deleteAgent(id) }
+
     suspend fun getAllCyberwares(): List<Cyberware> = firestore.getCyberwares().getOrDefault(emptyList())
 
     sealed class UiState {

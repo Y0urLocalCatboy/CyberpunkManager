@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -236,7 +237,11 @@ fun AdminFormView(
     var agentType by remember { mutableStateOf(AGENT_TYPE.DEF) }
     var agentActionsStr by remember { mutableStateOf("") }
     var agentPassiveActionsStr by remember { mutableStateOf("") }
-    var agentImplantsStr by remember { mutableStateOf("") }
+    var selectedImplants by remember { mutableStateOf(setOf<String>()) }
+
+    val allCyberwares by produceState<List<Cyberware>>(initialValue = emptyList()) {
+        value = viewModel.getAllCyberwares()
+    }
 
     val categories = listOf("Cyberware", "Gadgets", "Drugs", "Daemons", "Quickhacks", "Shards", "Weapons", "Agents")
 
@@ -281,7 +286,7 @@ fun AdminFormView(
                     uniqueName = initialItem.uniqueName ?: ""
                     agentActionsStr = initialItem.actions?.joinToString("; ") ?: ""
                     agentPassiveActionsStr = initialItem.passiveActions?.joinToString("; ") ?: ""
-                    agentImplantsStr = initialItem.implants?.joinToString("; ") ?: ""
+                    selectedImplants = initialItem.implants?.toSet() ?: emptySet()
                 }
             }
         }
@@ -394,7 +399,40 @@ fun AdminFormView(
             
             CyberTextField(value = agentActionsStr, onValueChange = { agentActionsStr = it }, label = "AKCJE (oddzielone średnikami)")
             CyberTextField(value = agentPassiveActionsStr, onValueChange = { agentPassiveActionsStr = it }, label = "AKCJE PASYWNE (oddzielone średnikami)")
-            CyberTextField(value = agentImplantsStr, onValueChange = { agentImplantsStr = it }, label = "WSZCZEPY (oddzielone średnikami)")
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("WSZCZEPY", color = CyberYellow, style = MaterialTheme.typography.labelSmall)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 300.dp)
+                    .border(1.dp, CyberLine)
+                    .padding(8.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                allCyberwares.forEach { cw ->
+                    val cwName = cw.uniqueName ?: cw.name
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                selectedImplants = if (selectedImplants.contains(cwName)) {
+                                    selectedImplants - cwName
+                                } else {
+                                    selectedImplants + cwName
+                                }
+                            }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = selectedImplants.contains(cwName),
+                            onCheckedChange = null
+                        )
+                        Text(cwName, color = CyberText, style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
         }
 
         if (category != "Agents") {
@@ -475,7 +513,7 @@ fun AdminFormView(
                         this.uniqueName = if (uniqueName.isNotBlank()) uniqueName else null
                         this.actions = agentActionsStr.split(";").map { it.trim() }.filter { it.isNotEmpty() }
                         this.passiveActions = agentPassiveActionsStr.split(";").map { it.trim() }.filter { it.isNotEmpty() }
-                        this.implants = agentImplantsStr.split(";").map { it.trim() }.filter { it.isNotEmpty() }
+                        this.implants = selectedImplants.toList()
                     }
                     if (initialItem != null) viewModel.editAgent(item) else viewModel.addAgent(item)
                 }
@@ -486,7 +524,7 @@ fun AdminFormView(
             } else {
                 name = ""; cost = ""; pcCost = ""; description = ""; uniqueName = ""; mechanicsStr = ""; weaponAttack = ""
                 agentHp = ""; agentWw = ""; agentInt = ""; agentCha = ""; agentStr = ""; agentSpd = ""; agentAcc = ""
-                agentMonthlyCost = ""; agentType = AGENT_TYPE.DEF; agentActionsStr = ""; agentPassiveActionsStr = ""; agentImplantsStr = ""
+                agentMonthlyCost = ""; agentType = AGENT_TYPE.DEF; agentActionsStr = ""; agentPassiveActionsStr = ""; selectedImplants = emptySet()
             }
         }
         Spacer(modifier = Modifier.height(40.dp))
@@ -504,9 +542,47 @@ fun AdminListView(
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val categories = listOf("Cyberware", "Gadgets", "Drugs", "Daemons", "Quickhacks", "Shards", "Weapons", "Agents")
+    
+    var itemToDelete by remember { mutableStateOf<Any?>(null) }
 
     LaunchedEffect(category) {
         viewModel.loadCategory(category)
+    }
+
+    if (itemToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { itemToDelete = null },
+            title = { Text("POTWIERDŹ USUNIĘCIE", color = CyberYellow) },
+            text = { Text("CZY NA PEWNO CHCESZ USUNĄĆ TEN ELEMENT?", color = CyberText) },
+            confirmButton = {
+                TextButton(onClick = {
+                    itemToDelete?.let { item ->
+                        val id = getProperty(item, "id") as? String ?: ""
+                        when (category) {
+                            "Cyberware" -> viewModel.deleteCyberware(id)
+                            "Drugs" -> viewModel.deleteDrug(id)
+                            "Gadgets" -> viewModel.deleteGadget(id)
+                            "Shards" -> viewModel.deleteShard(id)
+                            "Quickhacks" -> viewModel.deleteQuickhack(id)
+                            "Daemons" -> viewModel.deleteDaemon(id)
+                            "Weapons" -> viewModel.deleteWeapon(id)
+                            "Agents" -> viewModel.deleteAgent(id)
+                        }
+                        viewModel.loadCategory(category)
+                    }
+                    itemToDelete = null
+                }) {
+                    Text("USUŃ", color = CyberDanger)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { itemToDelete = null }) {
+                    Text("ANULUJ", color = CyberMuted)
+                }
+            },
+            containerColor = CyberBg,
+            shape = CutCornerShape(topStart = 16.dp, bottomEnd = 16.dp)
+        )
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
@@ -549,6 +625,7 @@ fun AdminListView(
                         AssetCard(
                             item = item,
                             onEditClick = { onEditClick(item) },
+                            onDeleteClick = { itemToDelete = item },
                             onClick = {
                                 viewModel.selectItem(item, category)
                                 onItemClick()
@@ -1340,7 +1417,7 @@ fun CategoryItem(name: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun AssetCard(item: Any, onEditClick: (() -> Unit)? = null, onClick: () -> Unit) {
+fun AssetCard(item: Any, onEditClick: (() -> Unit)? = null, onDeleteClick: (() -> Unit)? = null, onClick: () -> Unit) {
     val name = when(item) {
         is Cyberware -> item.uniqueName ?: item.name
         is Drug -> item.name
@@ -1373,13 +1450,24 @@ fun AssetCard(item: Any, onEditClick: (() -> Unit)? = null, onClick: () -> Unit)
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
                 )
-                if (onEditClick != null) {
-                    IconButton(onClick = onEditClick) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit",
-                            tint = CyberCyan
-                        )
+                Row {
+                    if (onEditClick != null) {
+                        IconButton(onClick = onEditClick) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit",
+                                tint = CyberCyan
+                            )
+                        }
+                    }
+                    if (onDeleteClick != null) {
+                        IconButton(onClick = onDeleteClick) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete",
+                                tint = CyberDanger
+                            )
+                        }
                     }
                 }
             }
