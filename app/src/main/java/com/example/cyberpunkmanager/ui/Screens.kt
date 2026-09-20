@@ -388,13 +388,13 @@ fun AdminFormView(
             
             Text("BONUSY DO RZUTÓW", color = CyberYellow, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(modifier = Modifier.weight(1f)) { CyberTextField(value = agentInt, onValueChange = { agentInt = it }, label = "INT") }
-                Box(modifier = Modifier.weight(1f)) { CyberTextField(value = agentCha, onValueChange = { agentCha = it }, label = "CHA") }
-                Box(modifier = Modifier.weight(1f)) { CyberTextField(value = agentStr, onValueChange = { agentStr = it }, label = "STR") }
+                Box(modifier = Modifier.weight(1f)) { CyberTextField(value = agentInt, onValueChange = { agentInt = it }, label = "INTELIGENCJA") }
+                Box(modifier = Modifier.weight(1f)) { CyberTextField(value = agentCha, onValueChange = { agentCha = it }, label = "CHARYZMA") }
+                Box(modifier = Modifier.weight(1f)) { CyberTextField(value = agentStr, onValueChange = { agentStr = it }, label = "SIŁA") }
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(modifier = Modifier.weight(1f)) { CyberTextField(value = agentSpd, onValueChange = { agentSpd = it }, label = "SPD") }
-                Box(modifier = Modifier.weight(1f)) { CyberTextField(value = agentAcc, onValueChange = { agentAcc = it }, label = "ACC") }
+                Box(modifier = Modifier.weight(1f)) { CyberTextField(value = agentSpd, onValueChange = { agentSpd = it }, label = "SZYBKOŚĆ") }
+                Box(modifier = Modifier.weight(1f)) { CyberTextField(value = agentAcc, onValueChange = { agentAcc = it }, label = "DOKŁADNOŚĆ") }
             }
             
             CyberTextField(value = agentActionsStr, onValueChange = { agentActionsStr = it }, label = "AKCJE (oddzielone średnikami)")
@@ -864,7 +864,7 @@ fun DetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                listOf("INT" to asset.intBonus, "CHA" to asset.chaBonus, "STR" to asset.strBonus, "SPD" to asset.spdBonus, "ACC" to asset.accBonus).forEach { (label, value) ->
+                                listOf("Inteligencja" to asset.intBonus, "Charyzma" to asset.chaBonus, "Siła" to asset.strBonus, "Szybkość" to asset.spdBonus, "Dokładność" to asset.accBonus).forEach { (label, value) ->
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text(label, color = CyberYellow, style = MaterialTheme.typography.labelSmall)
                                         Text(if (value >= 0) "+$value" else "$value", color = CyberText, style = MaterialTheme.typography.titleMedium)
